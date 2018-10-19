@@ -1,0 +1,6 @@
+apiVersion: inwinstack.com/v1alpha1
+kind: NATPolicy
+metadata:
+  name: my-nat
+spec:
+  

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pan-operator
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pan-operator
+  template:
+    metadata:
+      labels:
+        app: pan-operator
+    spec:
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+      serviceAccountName: pan-operator
+      containers:
+      - name: operator
+        image: inwinstack/pan-operator:v0.1.0
+        args:
+        - --v=2
+        - --logtostderr=true
+        - --pa-host=172.22.132.114
+        - --pa-username=admin
+        - --pa-password=admin
