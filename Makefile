@@ -32,6 +32,10 @@ test:
 build_image:
 	docker build -t $(OWNER)/pan-operator:$(VERSION) .
 
+.PHONY: push_image
+build_image:
+	docker push $(OWNER)/pan-operator:$(VERSION)
+
 .PHONY: clean
 clean:
 	rm -rf out/
