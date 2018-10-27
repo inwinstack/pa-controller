@@ -15,7 +15,7 @@ $(shell mkdir -p ./out)
 build: out/operator
 
 .PHONY: out/operator
-out/operator: dep
+out/operator:
 	GOOS=$(GOOS) go build \
 	  -ldflags="-X $(REPOPATH)/pkg/version.version=$(VERSION)" \
 	  -a -o $@ cmd/main.go
