@@ -6,22 +6,28 @@ import (
 	"os"
 
 	"github.com/golang/glog"
-	"github.com/inwinstack/pan-operator/pkg/operator"
+	"github.com/inwinstack/pa-operator/pkg/operator"
+	"github.com/inwinstack/pa-operator/pkg/util/pautil"
+	"github.com/inwinstack/pa-operator/pkg/version"
 	flag "github.com/spf13/pflag"
 )
 
 var (
 	kubeconfig string
-	paHost     string
-	paUser     string
-	paPassword string
+	host       string
+	username   string
+	password   string
+	namespaces []string
+	ver        bool
 )
 
 func parserFlags() {
 	flag.StringVarP(&kubeconfig, "kubeconfig", "", "", "Absolute path to the kubeconfig file.")
-	flag.StringVarP(&paHost, "pa-host", "", "", "PAN-OS host address.")
-	flag.StringVarP(&paUser, "pa-username", "", "", "PAN-OS username.")
-	flag.StringVarP(&paPassword, "pa-password", "", "", "PAN-OS password.")
+	flag.StringVarP(&host, "pa-host", "", "", "Palo Alto API host address.")
+	flag.StringVarP(&username, "pa-username", "", "", "Palo Alto API username.")
+	flag.StringVarP(&password, "pa-password", "", "", "Palo Alto API password.")
+	flag.StringSliceVarP(&namespaces, "ignore-namespaces", "", nil, "Set ignore namespaces for Kubernetes service.")
+	flag.BoolVarP(&ver, "version", "", false, "Display the version of subserver.")
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	flag.Parse()
 }
@@ -32,21 +38,27 @@ func main() {
 
 	glog.Infof("Starting PA operator...")
 
+	if ver {
+		fmt.Fprintf(os.Stdout, "%s\n", version.GetVersion())
+		os.Exit(0)
+	}
+
 	f := &operator.Flag{
-		Kubeconfig: kubeconfig,
-		PAHost:     paHost,
-		PAUsername: paUser,
-		PAPassword: paPassword,
+		Kubeconfig:       kubeconfig,
+		IgnoreNamespaces: namespaces,
+		PaloAlto: &pautil.PaloAltoFlag{
+			Host:     host,
+			Username: username,
+			Password: password,
+		},
 	}
 
 	op := operator.NewMainOperator(f)
 	if err := op.Initialize(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error initing operator instance: %s\n", err)
-		os.Exit(1)
+		glog.Fatalf("Error initing operator instance: %v.", err)
 	}
 
 	if err := op.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error serving operator instance: %s\n", err)
-		os.Exit(1)
+		glog.Fatalf("Error serving operator instance: %s.", err)
 	}
 }

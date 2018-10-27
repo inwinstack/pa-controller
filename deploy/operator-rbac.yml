@@ -1,21 +1,24 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: pan-operator
+  name: pa-operator
   namespace: kube-system
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: pan-operator-role
+  name: pa-operator-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - "*"
+- apiGroups:
   - apiextensions.k8s.io
-  - apps
-  - v1
   resources:
   - customresourcedefinitions
-  - services
   verbs:
   - get
   - list
@@ -33,12 +36,12 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: pan-operator-rolebinding
+  name: pa-operator-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pan-operator-role
+  name: pa-operator-role
 subjects:
 - kind: ServiceAccount
   namespace: kube-system
-  name: pan-operator
+  name: pa-operator

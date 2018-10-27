@@ -24,62 +24,64 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	inwinclientset "github.com/inwinstack/ipam/client/clientset/versioned/typed/inwinstack/v1"
 	opkit "github.com/inwinstack/operator-kit"
-	inwinclientset "github.com/inwinstack/pan-operator/pkg/client/clientset/versioned/typed/inwinstack/v1alpha1"
-	"github.com/inwinstack/pan-operator/pkg/operator/nat"
-	"github.com/inwinstack/pan-operator/pkg/operator/security"
-	"github.com/inwinstack/pan-operator/pkg/operator/service"
-	"github.com/inwinstack/pan-operator/pkg/util/k8sutil"
-	"github.com/inwinstack/pan-operator/pkg/util/pautil"
+	"github.com/inwinstack/pa-operator/pkg/operator/service"
+	"github.com/inwinstack/pa-operator/pkg/util/k8sutil"
+	"github.com/inwinstack/pa-operator/pkg/util/pautil"
 	"k8s.io/api/core/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	initRetryDelay = 10 * time.Second
+	interval       = 500 * time.Millisecond
+	timeout        = 60 * time.Second
+)
+
 type Flag struct {
-	Kubeconfig string
-	PAHost     string
-	PAUsername string
-	PAPassword string
+	Kubeconfig       string
+	IgnoreNamespaces []string
+	PaloAlto         *pautil.PaloAltoFlag
 }
 
 type Operator struct {
-	ctx                *opkit.Context
-	serviceController  *service.ServiceController
-	natControler       *nat.NATController
-	securityController *security.SecurityController
-	resources          []opkit.CustomResource
-	flag               *Flag
+	ctx     *opkit.Context
+	service *service.ServiceController
+	flag    *Flag
 }
 
 func NewMainOperator(flag *Flag) *Operator {
-	return &Operator{
-		resources: []opkit.CustomResource{nat.Resource, security.Resource},
-		flag:      flag,
-	}
+	return &Operator{flag: flag}
 }
 
 func (o *Operator) Initialize() error {
 	glog.V(2).Info("Initialize the operator resources.")
 
-	paclient, err := pautil.NewPAClient(o.flag.PAHost, o.flag.PAUsername, o.flag.PAPassword)
+	pa, err := pautil.NewClient(o.flag.PaloAlto)
+	if err != nil {
+		return err
+	}
+	o.showPaloAltoInfors(pa)
+
+	ctx, inwinclient, err := o.initContextAndClient()
 	if err != nil {
 		return err
 	}
 
-	ctx, clientset, err := o.initContextAndClient()
-	if err != nil {
-		return err
-	}
-
-	o.serviceController = service.NewController(ctx)
-	o.natControler = nat.NewController(ctx, clientset, paclient)
-	o.securityController = security.NewController(ctx, clientset, paclient)
+	o.service = service.NewController(ctx, inwinclient, pa, o.flag.IgnoreNamespaces)
 	o.ctx = ctx
 	return nil
 }
 
-func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.InwinstackV1alpha1Interface, error) {
+func (o *Operator) showPaloAltoInfors(pa *pautil.PaloAlto) {
+	glog.V(2).Infof("PA version: %s.\n", pa.GetVersion())
+	glog.V(2).Infof("PA hostname: %s.\n", pa.GetHostname())
+	glog.V(2).Infof("PA username: %s.\n", pa.GetUsername())
+}
+
+func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.InwinstackV1Interface, error) {
 	glog.V(2).Info("Initialize the operator context and client.")
 
 	config, err := k8sutil.GetRestConfig(o.flag.Kubeconfig)
@@ -99,52 +101,25 @@ func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.Inwins
 
 	inwinclient, err := inwinclientset.NewForConfig(config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to create pan-operator clientset. %+v", err)
+		return nil, nil, fmt.Errorf("Failed to create pa-operator clientset. %+v", err)
 	}
 
 	ctx := &opkit.Context{
 		Clientset:             client,
 		APIExtensionClientset: extensionsclient,
-		Interval:              Interval,
-		Timeout:               Timeout,
+		Interval:              interval,
+		Timeout:               timeout,
 	}
 	return ctx, inwinclient, nil
 }
 
-func (o *Operator) initResources() error {
-	glog.V(2).Info("Initialize the CRD resources.")
-
-	ctx := opkit.Context{
-		Clientset:             o.ctx.Clientset,
-		APIExtensionClientset: o.ctx.APIExtensionClientset,
-		Interval:              Interval,
-		Timeout:               Timeout,
-	}
-	err := opkit.CreateCustomResources(ctx, o.resources)
-	if err != nil {
-		return fmt.Errorf("Failed to create custom resource. %+v", err)
-	}
-	return nil
-}
-
 func (o *Operator) Run() error {
-	for {
-		err := o.initResources()
-		if err == nil {
-			break
-		}
-		glog.Errorf("Failed to init resources. %+v. retrying...", err)
-		<-time.After(InitRetryDelay)
-	}
-
 	signalChan := make(chan os.Signal, 1)
 	stopChan := make(chan struct{})
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// start watching the resources
-	o.natControler.StartWatch(v1.NamespaceAll, stopChan)
-	o.securityController.StartWatch(v1.NamespaceAll, stopChan)
-	o.serviceController.StartWatch(v1.NamespaceAll, stopChan)
+	o.service.StartWatch(v1.NamespaceAll, stopChan)
 
 	for {
 		select {

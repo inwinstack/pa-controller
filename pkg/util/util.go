@@ -18,8 +18,19 @@ package util
 
 import (
 	"log"
+	"net"
 	"time"
 )
+
+func ParseIP(s string) net.IP {
+	return net.ParseIP(s)
+}
+
+type RetriableError struct {
+	Err error
+}
+
+func (r RetriableError) Error() string { return r.Err.Error() }
 
 func Retry(callback func() error, d time.Duration, attempts int) (err error) {
 	for i := 0; i < attempts; i++ {

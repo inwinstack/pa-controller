@@ -3,7 +3,7 @@ FROM inwinstack/golang:1.11-alpine AS build-env
 LABEL maintainer="Kyle Bai <kyle.b@inwinstack.com>"
 
 ENV GOPATH "/go"
-ENV PROJECT_PATH "$GOPATH/src/github.com/inwinstack/pan-operator"
+ENV PROJECT_PATH "$GOPATH/src/github.com/inwinstack/pa-operator"
 
 COPY . $PROJECT_PATH
 RUN cd $PROJECT_PATH && \

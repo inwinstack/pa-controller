@@ -1,6 +1,0 @@
-apiVersion: inwinstack.com/v1alpha1
-kind: SecurityPolicy
-metadata:
-  name: my-security
-spec:
-  
