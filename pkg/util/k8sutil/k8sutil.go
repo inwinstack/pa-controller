@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	blendedv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
-	blendedclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
+	inwinv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
+	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
 	"github.com/inwinstack/pa-operator/pkg/constants"
 	"k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -62,21 +62,21 @@ func FilterServices(svcs *v1.ServiceList, addr string) {
 	svcs.Items = items
 }
 
-func NewIP(namespace, poolName string) *blendedv1.IP {
-	return &blendedv1.IP{
+func NewIP(namespace, poolName string) *inwinv1.IP {
+	return &inwinv1.IP{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s", uuid.NewUUID()),
 			Namespace: namespace,
 		},
-		Spec: blendedv1.IPSpec{
+		Spec: inwinv1.IPSpec{
 			PoolName:        poolName,
 			UpdateNamespace: false,
 		},
 	}
 }
 
-func FilterIPs(ips *blendedv1.IPList, addr, pool string) {
-	var items []blendedv1.IP
+func FilterIPs(ips *inwinv1.IPList, addr, pool string) {
+	var items []inwinv1.IP
 	for _, ip := range ips.Items {
 		v := ip.Annotations[constants.AnnKeyExternalIP]
 		if ip.Spec.PoolName == pool && v == addr {
@@ -86,7 +86,7 @@ func FilterIPs(ips *blendedv1.IPList, addr, pool string) {
 	ips.Items = items
 }
 
-func WaitForIP(c blendedclientset.InwinstackV1Interface, ns, name string, timeout time.Duration) error {
+func WaitForIP(c inwinclientset.InwinstackV1Interface, ns, name string, timeout time.Duration) error {
 	opts := metav1.ListOptions{
 		FieldSelector: fields.Set{
 			"metadata.name":      name,
@@ -105,10 +105,10 @@ func WaitForIP(c blendedclientset.InwinstackV1Interface, ns, name string, timeou
 		}
 
 		switch ip := event.Object.(type) {
-		case *blendedv1.IP:
+		case *inwinv1.IP:
 			if ip.Name == name &&
 				ip.Namespace == ns &&
-				ip.Status.Phase == blendedv1.IPActive {
+				ip.Status.Phase == inwinv1.IPActive {
 				return true, nil
 			}
 			glog.V(2).Infof("Waiting for IP %s to stabilize, generation %v observed status.IP %s.",

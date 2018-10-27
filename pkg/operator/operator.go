@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	blendedclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
+	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
 	opkit "github.com/inwinstack/operator-kit"
 	"github.com/inwinstack/pa-operator/pkg/operator/service"
 	"github.com/inwinstack/pa-operator/pkg/util/k8sutil"
@@ -65,12 +65,12 @@ func (o *Operator) Initialize() error {
 	}
 	o.showPaloAltoInfors(paclient)
 
-	ctx, blendedclient, err := o.initContextAndClient()
+	ctx, inwinclient, err := o.initContextAndClient()
 	if err != nil {
 		return err
 	}
 
-	o.service = service.NewController(ctx, blendedclient, paclient, o.flag.IgnoreNamespaces)
+	o.service = service.NewController(ctx, inwinclient, paclient, o.flag.IgnoreNamespaces)
 	o.ctx = ctx
 	return nil
 }
@@ -81,7 +81,7 @@ func (o *Operator) showPaloAltoInfors(paclient *pautil.PaloAlto) {
 	glog.V(2).Infof("PA username: %s.\n", paclient.GetUsername())
 }
 
-func (o *Operator) initContextAndClient() (*opkit.Context, blendedclientset.InwinstackV1Interface, error) {
+func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.InwinstackV1Interface, error) {
 	glog.V(2).Info("Initialize the operator context and client.")
 
 	config, err := k8sutil.GetRestConfig(o.flag.Kubeconfig)
@@ -99,7 +99,7 @@ func (o *Operator) initContextAndClient() (*opkit.Context, blendedclientset.Inwi
 		return nil, nil, fmt.Errorf("Failed to create Kubernetes API extension clientset. %+v", err)
 	}
 
-	blendedclient, err := blendedclientset.NewForConfig(config)
+	inwinclient, err := inwinclientset.NewForConfig(config)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to create blended clientset. %+v", err)
 	}
@@ -110,7 +110,7 @@ func (o *Operator) initContextAndClient() (*opkit.Context, blendedclientset.Inwi
 		Interval:              interval,
 		Timeout:               timeout,
 	}
-	return ctx, blendedclient, nil
+	return ctx, inwinclient, nil
 }
 
 func (o *Operator) Run() error {
