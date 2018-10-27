@@ -21,7 +21,7 @@
   branch = "v1.11.0"
 
 [[constraint]]
-  name = "github.com/inwinstack/ipam"
+  name = "github.com/inwinstack/blended"
   version = "v0.3.0"
 
 [prune]
