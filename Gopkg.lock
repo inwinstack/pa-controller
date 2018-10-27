@@ -161,8 +161,8 @@
   version = "v0.3.6"
 
 [[projects]]
-  digest = "1:87496a8bbffa9054a32bce6e7de35adead85c4ec9860d2a0b02351cc2c8a35fc"
-  name = "github.com/inwinstack/ipam"
+  digest = "1:c6fb08e2aaf16dd16ce876f3aaaea0b8f78077fa763f3b93705a89d6deefb998"
+  name = "github.com/inwinstack/blended"
   packages = [
     "apis/inwinstack",
     "apis/inwinstack/v1",
@@ -170,7 +170,7 @@
     "client/clientset/versioned/typed/inwinstack/v1",
   ]
   pruneopts = "UT"
-  revision = "f0932c9bbfe93f9d8a33613db06b95878ef4fb67"
+  revision = "cb37cdf4d7f6091243897e7761a7aa978710cbce"
   version = "v0.3.0"
 
 [[projects]]
@@ -509,12 +509,11 @@
     "github.com/PaloAltoNetworks/pango/poli/nat",
     "github.com/PaloAltoNetworks/pango/poli/security",
     "github.com/golang/glog",
-    "github.com/inwinstack/ipam/apis/inwinstack/v1",
-    "github.com/inwinstack/ipam/client/clientset/versioned/typed/inwinstack/v1",
+    "github.com/inwinstack/blended/apis/inwinstack/v1",
+    "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1",
     "github.com/inwinstack/operator-kit",
     "github.com/spf13/pflag",
     "github.com/stretchr/testify/assert",
-    "k8s.io/api/core/v1",
     "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",

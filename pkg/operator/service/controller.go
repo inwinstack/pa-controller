@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	inwinclientset "github.com/inwinstack/ipam/client/clientset/versioned/typed/inwinstack/v1"
+	blendedclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
 	opkit "github.com/inwinstack/operator-kit"
 	"github.com/inwinstack/pa-operator/pkg/constants"
 	"github.com/inwinstack/pa-operator/pkg/util"
@@ -50,19 +50,19 @@ var (
 
 type ServiceController struct {
 	ctx              *opkit.Context
-	inwinclient      inwinclientset.InwinstackV1Interface
+	blendedclient    blendedclientset.InwinstackV1Interface
 	pa               *pautil.PaloAlto
 	ignoreNamespaces []string
 }
 
 func NewController(
 	ctx *opkit.Context,
-	client inwinclientset.InwinstackV1Interface,
+	client blendedclientset.InwinstackV1Interface,
 	pa *pautil.PaloAlto,
 	namespaces []string) *ServiceController {
 	return &ServiceController{
 		ctx:              ctx,
-		inwinclient:      client,
+		blendedclient:    client,
 		pa:               pa,
 		ignoreNamespaces: namespaces,
 	}
@@ -200,7 +200,7 @@ func (c *ServiceController) allocatePublicIP(svc *v1.Service) error {
 	pool := svc.Annotations[constants.AnnKeyExternalPool]
 	public := util.ParseIP(svc.Annotations[constants.AnnKeyPublicIP])
 	if public == nil && pool != "" {
-		ips, err := c.inwinclient.IPs(svc.Namespace).List(metav1.ListOptions{})
+		ips, err := c.blendedclient.IPs(svc.Namespace).List(metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
@@ -218,7 +218,7 @@ func (c *ServiceController) allocatePublicIP(svc *v1.Service) error {
 			constants.AnnKeyExternalIP: svc.Spec.ExternalIPs[0],
 		}
 
-		if _, err := c.inwinclient.IPs(svc.Namespace).Create(ip); err != nil {
+		if _, err := c.blendedclient.IPs(svc.Namespace).Create(ip); err != nil {
 			return err
 		}
 	}
@@ -244,7 +244,7 @@ func (c *ServiceController) deallocatePublicIP(svc *v1.Service) error {
 		}
 
 		id := svc.Annotations[constants.AnnKeyPublicID]
-		return c.inwinclient.IPs(svc.Namespace).Delete(id, nil)
+		return c.blendedclient.IPs(svc.Namespace).Delete(id, nil)
 	}
 	return nil
 }

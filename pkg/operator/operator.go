@@ -24,13 +24,13 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	inwinclientset "github.com/inwinstack/ipam/client/clientset/versioned/typed/inwinstack/v1"
+	blendedclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
 	opkit "github.com/inwinstack/operator-kit"
 	"github.com/inwinstack/pa-operator/pkg/operator/service"
 	"github.com/inwinstack/pa-operator/pkg/util/k8sutil"
 	"github.com/inwinstack/pa-operator/pkg/util/pautil"
 	"k8s.io/api/core/v1"
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -59,29 +59,29 @@ func NewMainOperator(flag *Flag) *Operator {
 func (o *Operator) Initialize() error {
 	glog.V(2).Info("Initialize the operator resources.")
 
-	pa, err := pautil.NewClient(o.flag.PaloAlto)
+	paclient, err := pautil.NewClient(o.flag.PaloAlto)
 	if err != nil {
 		return err
 	}
-	o.showPaloAltoInfors(pa)
+	o.showPaloAltoInfors(paclient)
 
-	ctx, inwinclient, err := o.initContextAndClient()
+	ctx, blendedclient, err := o.initContextAndClient()
 	if err != nil {
 		return err
 	}
 
-	o.service = service.NewController(ctx, inwinclient, pa, o.flag.IgnoreNamespaces)
+	o.service = service.NewController(ctx, blendedclient, paclient, o.flag.IgnoreNamespaces)
 	o.ctx = ctx
 	return nil
 }
 
-func (o *Operator) showPaloAltoInfors(pa *pautil.PaloAlto) {
-	glog.V(2).Infof("PA version: %s.\n", pa.GetVersion())
-	glog.V(2).Infof("PA hostname: %s.\n", pa.GetHostname())
-	glog.V(2).Infof("PA username: %s.\n", pa.GetUsername())
+func (o *Operator) showPaloAltoInfors(paclient *pautil.PaloAlto) {
+	glog.V(2).Infof("PA version: %s.\n", paclient.GetVersion())
+	glog.V(2).Infof("PA hostname: %s.\n", paclient.GetHostname())
+	glog.V(2).Infof("PA username: %s.\n", paclient.GetUsername())
 }
 
-func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.InwinstackV1Interface, error) {
+func (o *Operator) initContextAndClient() (*opkit.Context, blendedclientset.InwinstackV1Interface, error) {
 	glog.V(2).Info("Initialize the operator context and client.")
 
 	config, err := k8sutil.GetRestConfig(o.flag.Kubeconfig)
@@ -94,14 +94,14 @@ func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.Inwins
 		return nil, nil, fmt.Errorf("Failed to get Kubernetes client. %+v", err)
 	}
 
-	extensionsclient, err := apiextensionsclient.NewForConfig(config)
+	extensionsclient, err := apiextensionsclientset.NewForConfig(config)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to create Kubernetes API extension clientset. %+v", err)
 	}
 
-	inwinclient, err := inwinclientset.NewForConfig(config)
+	blendedclient, err := blendedclientset.NewForConfig(config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to create pa-operator clientset. %+v", err)
+		return nil, nil, fmt.Errorf("Failed to create blended clientset. %+v", err)
 	}
 
 	ctx := &opkit.Context{
@@ -110,7 +110,7 @@ func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.Inwins
 		Interval:              interval,
 		Timeout:               timeout,
 	}
-	return ctx, inwinclient, nil
+	return ctx, blendedclient, nil
 }
 
 func (o *Operator) Run() error {
