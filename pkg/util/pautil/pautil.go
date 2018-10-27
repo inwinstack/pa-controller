@@ -18,97 +18,56 @@ package pautil
 
 import (
 	"github.com/PaloAltoNetworks/pango"
-	"github.com/PaloAltoNetworks/pango/poli/nat"
-	"github.com/PaloAltoNetworks/pango/poli/security"
-	"github.com/golang/glog"
 )
 
-func NewPAClient(host, user, password string) (*pango.Firewall, error) {
+type PaloAltoFlag struct {
+	Host     string
+	Username string
+	Password string
+}
+
+type PaloAlto struct {
+	client   *pango.Firewall
+	Nat      Nat
+	Security Security
+	Service  Service
+}
+
+func NewClient(flag *PaloAltoFlag) (*PaloAlto, error) {
 	client := &pango.Firewall{Client: pango.Client{
-		Hostname: host,
-		Username: user,
-		Password: password,
+		Hostname: flag.Host,
+		Username: flag.Username,
+		Password: flag.Password,
 		Logging:  pango.LogQuiet,
 	}}
 
 	if err := client.Initialize(); err != nil {
 		return nil, err
 	}
-	glog.V(2).Infof("Get PA version: %s.", client.Versioning())
-	return client, nil
+
+	pa := &PaloAlto{client: client}
+	pa.Nat = &NatOp{policies: client.Policies}
+	pa.Security = &SecurityOp{policies: client.Policies}
+	pa.Service = &ServiceOp{objs: client.Objects}
+	return pa, nil
 }
 
-func TestGetNATPolicys(client *pango.Firewall) ([]string, error) {
-	policies, err := client.Policies.Nat.GetList("")
-	if err != nil {
-		return nil, err
-	}
-	for _, poli := range policies {
-		p, _ := client.Policies.Nat.Get("", poli)
-		glog.V(2).Infof("Show %s: %v.", poli, p)
-	}
-	return policies, nil
-}
-
-func TestGetSecurityPolicys(client *pango.Firewall) ([]string, error) {
-	policies, err := client.Policies.Security.GetList("")
-	if err != nil {
-		return nil, err
-	}
-	for _, poli := range policies {
-		p, _ := client.Policies.Security.Get("", poli)
-		glog.V(2).Infof("Show %s: %s.", poli, p)
-	}
-	return policies, nil
-}
-
-func TestSetNATPolicy(client *pango.Firewall) error {
-	entry := nat.Entry{
-		Name:                 "Nat policy",
-		Description:          "My NAT policy",
-		Type:                 "ipv4",
-		SourceZones:          []string{"untrust"},
-		DestinationZone:      "trust",
-		ToInterface:          "ethernet1/2",
-		Service:              "any",
-		SourceAddresses:      []string{"any"},
-		DestinationAddresses: []string{"192.168.200.10"},
-		SatType:              "none",
-		DatType:              "destination-translation",
-		DatAddress:           "140.9.1.100",
-		DatPort:              1234,
-		Tags:                 []string{"k8s-nat"},
-	}
-
-	err := client.Policies.Nat.Set("", entry)
+func (pa *PaloAlto) Commit() error {
+	_, err := pa.client.Commit("", false, true, false, false)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func TestSetSecurityPolicy(client *pango.Firewall) error {
-	entry := security.Entry{
-		Name:                 "Security policy",
-		Description:          "My security policy",
-		Type:                 "universal",
-		NegateSource:         false,
-		NegateDestination:    false,
-		Action:               "allow",
-		SourceZones:          []string{"any"},
-		SourceUsers:          []string{"any"},
-		DestinationZones:     []string{"any"},
-		DestinationAddresses: []string{"any"},
-		Applications:         []string{"any"},
-		Services:             []string{"any"},
-		Categories:           []string{"any"},
-		HipProfiles:          []string{"any"},
-		Tags:                 []string{"k8s-nat"},
-	}
-	err := client.Policies.Security.Set("", entry)
-	if err != nil {
-		glog.V(2).Infof("Err: %s.", err)
-		return err
-	}
-	return nil
+func (pa *PaloAlto) GetVersion() string {
+	return pa.client.Versioning().String()
+}
+
+func (pa *PaloAlto) GetHostname() string {
+	return pa.client.Hostname
+}
+
+func (pa *PaloAlto) GetUsername() string {
+	return pa.client.Username
 }

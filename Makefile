@@ -1,5 +1,5 @@
 VERSION_MAJOR ?= 0
-VERSION_MINOR ?= 1
+VERSION_MINOR ?= 2
 VERSION_BUILD ?= 0
 VERSION ?= v$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_BUILD)
 
@@ -7,7 +7,7 @@ GOOS ?= $(shell go env GOOS)
 
 ORG := github.com
 OWNER := inwinstack
-REPOPATH ?= $(ORG)/$(OWNER)/pan-operator
+REPOPATH ?= $(ORG)/$(OWNER)/pa-operator
 
 $(shell mkdir -p ./out)
 
@@ -30,11 +30,11 @@ test:
 
 .PHONY: build_image
 build_image:
-	docker build -t $(OWNER)/pan-operator:$(VERSION) .
+	docker build -t $(OWNER)/pa-operator:$(VERSION) .
 
 .PHONY: push_image
-build_image:
-	docker push $(OWNER)/pan-operator:$(VERSION)
+push_image:
+	docker push $(OWNER)/pa-operator:$(VERSION)
 
 .PHONY: clean
 clean:

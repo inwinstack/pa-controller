@@ -2,19 +2,19 @@ apiVersion: v1
 kind: Service
 metadata:
   annotations:
-    inwinstack.com/allow-security-policy: true
-    inwinstack.com/allow-nat-policy: true
-    # auto assign by operator
-    #inwinstack.com/allocated-public-ip: 140.110.134.99
+    inwinstack.com/allow-security-policy: "true"
+    inwinstack.com/allow-nat-policy: "true"
   labels:
     run: nginx
   name: nginx
+  namespace: test
 spec:
   externalIPs:
-  - 172.22.132.8
+  - 172.29.188.2
   externalTrafficPolicy: Cluster
   ports:
-  - port: 80
+  - name: http-80
+    port: 80
     protocol: TCP
     targetPort: 80
   selector:

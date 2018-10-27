@@ -10,6 +10,7 @@
 vendor/
 out/
 tmp/
+test.xml
 
 pkg/client/listers/
 pkg/client/informers/
