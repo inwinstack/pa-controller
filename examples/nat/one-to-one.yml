@@ -1,0 +1,20 @@
+apiVersion: inwinstack.com/v1
+kind: NAT
+metadata:
+  name: one-to-one
+spec:
+  type: ipv4
+  sourceZones:
+    - untrust
+  sourceAddresses:
+    - any
+  destinationAddresses: 
+    - 140.23.110.10
+  destinationZone: untrust
+  toInterface: any
+  service: any
+  satType: none
+  datType: destination-translation
+  datAddress: 172.22.132.9
+  datPort: 80
+  description: "Kubernetes NAT custom resource"

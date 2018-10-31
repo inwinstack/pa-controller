@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:026e88b07bc11301abec6ade43656cd2ff70860b7144d70a596248c26de7bd9b"
+  digest = "1:41dc22ce2611891b2f5bd8e580de82a29c477c251a06c55a69a7700f24255a60"
   name = "github.com/PaloAltoNetworks/pango"
   packages = [
     ".",
@@ -17,9 +17,13 @@
     "netw/interface/loopback",
     "netw/interface/tunnel",
     "netw/interface/vlan",
+    "netw/ipsectunnel",
+    "netw/ipsectunnel/proxyid/ipv4",
+    "netw/profile/bfd",
     "netw/profile/ike",
     "netw/profile/ipsec",
     "netw/profile/mngtprof",
+    "netw/routing/profile/redist/ipv4",
     "netw/routing/route/static/ipv4",
     "netw/routing/router",
     "netw/vlan",
@@ -34,6 +38,7 @@
     "pnrm",
     "pnrm/dg",
     "pnrm/template",
+    "pnrm/template/stack",
     "pnrm/template/variable",
     "poli",
     "poli/nat",
@@ -43,15 +48,15 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "9cbea609c9d688f510ee4606530f4f9a2aec37fd"
+  revision = "0618db202645e5e9b972f70dcddef66fdb02e69b"
 
 [[projects]]
-  digest = "1:a2c1d0e43bd3baaa071d1b9ed72c27d78169b2b269f71c105ac4ba34b1be4a39"
+  digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = "UT"
-  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
-  version = "v1.1.0"
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
 
 [[projects]]
   digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
@@ -142,15 +147,15 @@
   revision = "9cad4c3443a7200dd6400aef47183728de563a38"
 
 [[projects]]
-  branch = "master"
-  digest = "1:cf296baa185baae04a9a7004efee8511d08e2f5f51d4cbe5375da89722d681db"
+  digest = "1:8ec8d88c248041a6df5f6574b87bc00e7e0b493881dad2e7ef47b11dc69093b5"
   name = "github.com/hashicorp/golang-lru"
   packages = [
     ".",
     "simplelru",
   ]
   pruneopts = "UT"
-  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
+  revision = "20f1fb78b0740ba8c3cb143a61e86ba5c8669768"
+  version = "v0.5.0"
 
 [[projects]]
   digest = "1:8eb1de8112c9924d59bf1d3e5c26f5eaa2bfc2a5fcbb92dc1c2e4546d695f277"
@@ -161,7 +166,8 @@
   version = "v0.3.6"
 
 [[projects]]
-  digest = "1:c6fb08e2aaf16dd16ce876f3aaaea0b8f78077fa763f3b93705a89d6deefb998"
+  branch = "master"
+  digest = "1:accd04d66eb928d008f3080227aab17cedf67a5aa6bc4860e0dc86eef3d03772"
   name = "github.com/inwinstack/blended"
   packages = [
     "apis/inwinstack",
@@ -170,8 +176,7 @@
     "client/clientset/versioned/typed/inwinstack/v1",
   ]
   pruneopts = "UT"
-  revision = "cb37cdf4d7f6091243897e7761a7aa978710cbce"
-  version = "v0.3.0"
+  revision = "16903f5c9d9e1b1b60f3028db9ff996725e6a959"
 
 [[projects]]
   branch = "v1.11.0"
@@ -238,12 +243,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:dab83a1bbc7ad3d7a6ba1a1cc1760f25ac38cdf7d96a5cdd55cd915a4f5ceaf9"
+  digest = "1:c1b1102241e7f645bc8e0c22ae352e8f0dc6484b6cb4d132fa9f24174e0119e2"
   name = "github.com/spf13/pflag"
   packages = ["."]
   pruneopts = "UT"
-  revision = "9a97c102cda95a86cec2345a6f09f55a939babf5"
-  version = "v1.0.2"
+  revision = "298182f68c66c05229eb03ac171abe6e309ee79a"
+  version = "v1.0.3"
 
 [[projects]]
   digest = "1:18752d0b95816a1b777505a97f71c7467a8445b8ffb55631a7bf779f6ba4fa83"
@@ -259,11 +264,11 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "de0752318171da717af4ce24d0a2e8626afaeb11"
+  revision = "bc7917b19d8f099105de72dc62898400be07c984"
 
 [[projects]]
   branch = "master"
-  digest = "1:425e53b90bd805997e6fd8cca2eb940131fc684e1c84c6c8b6190ff365b540db"
+  digest = "1:341204cc93964f974aafe67b97f47a4e3ed7f84b2f041ac75873fde6dff41164"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -273,18 +278,18 @@
     "idna",
   ]
   pruneopts = "UT"
-  revision = "c39426892332e1bb5ec0a434a079bf82f5d30c54"
+  revision = "c44066c5c816ec500d459a2a324a753f78531ae0"
 
 [[projects]]
   branch = "master"
-  digest = "1:d756534cd4124a2c7f9b349b2a70a63e53d4e32befae47d6a4bd938a64b92e14"
+  digest = "1:a5090ea95e2600b2a369df77359c5871948f12bc8f0632db0342f5acc5e30c1d"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "4e1fef5609515ec7a2cee7b5de30ba6d9b438cbf"
+  revision = "d69651ed3497faee15a5363a89578e9991f6d5e2"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -514,6 +519,8 @@
     "github.com/inwinstack/operator-kit",
     "github.com/spf13/pflag",
     "github.com/stretchr/testify/assert",
+    "k8s.io/api/core/v1",
+    "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
     "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",

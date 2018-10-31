@@ -17,9 +17,10 @@ limitations under the License.
 package util
 
 import (
-	"log"
 	"net"
 	"time"
+
+	"github.com/golang/glog"
 )
 
 func ParseIP(s string) net.IP {
@@ -38,7 +39,7 @@ func Retry(callback func() error, d time.Duration, attempts int) (err error) {
 		if err == nil {
 			return nil
 		}
-		log.Printf("Error: %s, Retrying in %s. %d Retries remaining.", err, d, attempts-i)
+		glog.Errorf("Error: %s, Retrying in %s. %d Retries remaining.", err, d, attempts-i)
 		time.Sleep(d)
 	}
 	return err

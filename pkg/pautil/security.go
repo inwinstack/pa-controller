@@ -24,7 +24,7 @@ import (
 type Security interface {
 	List() ([]string, error)
 	Get(string) (*security.Entry, error)
-	Set(string, string, []string) error
+	Set(*security.Entry) error
 	Delete(string) error
 }
 
@@ -50,26 +50,8 @@ func (op *SecurityOp) Get(name string) (*security.Entry, error) {
 	return &entry, nil
 }
 
-func (op *SecurityOp) Set(name, srcAddr string, services []string) error {
-	entry := security.Entry{
-		Name:                            name,
-		Description:                     "Auto sync Security for Kubernetes.",
-		SourceZones:                     []string{"untrust"},
-		SourceAddresses:                 []string{"any"},
-		SourceUsers:                     []string{"any"},
-		HipProfiles:                     []string{"any"},
-		DestinationZones:                []string{"AI public service network"},
-		DestinationAddresses:            []string{srcAddr},
-		Applications:                    []string{"any"},
-		Services:                        services,
-		Categories:                      []string{"any"},
-		Action:                          "allow",
-		IcmpUnreachable:                 false,
-		DisableServerResponseInspection: false,
-	}
-
-	entry.Defaults()
-	if err := op.policies.Security.Set("", entry); err != nil {
+func (op *SecurityOp) Set(entry *security.Entry) error {
+	if err := op.policies.Security.Edit("", *entry); err != nil {
 		return err
 	}
 	return nil

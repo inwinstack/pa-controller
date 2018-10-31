@@ -24,7 +24,7 @@ import (
 type Nat interface {
 	List() ([]string, error)
 	Get(string) (*nat.Entry, error)
-	Set(string, string, string, int32) error
+	Set(*nat.Entry) error
 	Delete(string) error
 }
 
@@ -50,24 +50,8 @@ func (op *NatOp) Get(name string) (*nat.Entry, error) {
 	return &entry, nil
 }
 
-func (op *NatOp) Set(name, srcAddr, destAddr string, port int32) error {
-	entry := nat.Entry{
-		Name:                 name,
-		Type:                 "ipv4",
-		Description:          "Auto sync NAT for Kubernetes.",
-		SourceZones:          []string{"untrust"},
-		SourceAddresses:      []string{"any"},
-		DestinationAddresses: []string{srcAddr},
-		DestinationZone:      "untrust",
-		ToInterface:          "any",
-		Service:              "any",
-		SatType:              nat.None,
-		DatType:              nat.DatTypeStatic,
-		DatAddress:           destAddr,
-		DatPort:              int(port),
-	}
-
-	if err := op.policies.Nat.Set("", entry); err != nil {
+func (op *NatOp) Set(entry *nat.Entry) error {
+	if err := op.policies.Nat.Edit("", *entry); err != nil {
 		return err
 	}
 	return nil

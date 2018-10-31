@@ -26,9 +26,11 @@ import (
 	"github.com/golang/glog"
 	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
 	opkit "github.com/inwinstack/operator-kit"
+	"github.com/inwinstack/pa-operator/pkg/k8sutil"
+	"github.com/inwinstack/pa-operator/pkg/operator/nat"
+	"github.com/inwinstack/pa-operator/pkg/operator/security"
 	"github.com/inwinstack/pa-operator/pkg/operator/service"
-	"github.com/inwinstack/pa-operator/pkg/util/k8sutil"
-	"github.com/inwinstack/pa-operator/pkg/util/pautil"
+	"github.com/inwinstack/pa-operator/pkg/pautil"
 	"k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
@@ -43,17 +45,26 @@ const (
 type Flag struct {
 	Kubeconfig       string
 	IgnoreNamespaces []string
-	PaloAlto         *pautil.PaloAltoFlag
+	Retry            int
+	PaloAlto         *pautil.Flag
 }
 
 type Operator struct {
-	ctx     *opkit.Context
-	service *service.ServiceController
-	flag    *Flag
+	ctx       *opkit.Context
+	flag      *Flag
+	resources []opkit.CustomResource
+
+	// Resource controllers
+	service  *service.ServiceController
+	security *security.SecurityController
+	nat      *nat.NATController
 }
 
 func NewMainOperator(flag *Flag) *Operator {
-	return &Operator{flag: flag}
+	return &Operator{
+		resources: []opkit.CustomResource{nat.Resource, security.Resource},
+		flag:      flag,
+	}
 }
 
 func (o *Operator) Initialize() error {
@@ -63,7 +74,7 @@ func (o *Operator) Initialize() error {
 	if err != nil {
 		return err
 	}
-	o.showPaloAltoInfors(paclient)
+	o.showPaloAltoInfos(paclient)
 
 	ctx, inwinclient, err := o.initContextAndClient()
 	if err != nil {
@@ -71,11 +82,13 @@ func (o *Operator) Initialize() error {
 	}
 
 	o.service = service.NewController(ctx, inwinclient, paclient, o.flag.IgnoreNamespaces)
+	o.security = security.NewController(ctx, inwinclient, paclient, o.flag.Retry)
+	o.nat = nat.NewController(ctx, inwinclient, paclient, o.flag.Retry)
 	o.ctx = ctx
 	return nil
 }
 
-func (o *Operator) showPaloAltoInfors(paclient *pautil.PaloAlto) {
+func (o *Operator) showPaloAltoInfos(paclient *pautil.PaloAlto) {
 	glog.V(2).Infof("PA version: %s.\n", paclient.GetVersion())
 	glog.V(2).Infof("PA hostname: %s.\n", paclient.GetHostname())
 	glog.V(2).Infof("PA username: %s.\n", paclient.GetUsername())
@@ -101,7 +114,7 @@ func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.Inwins
 
 	inwinclient, err := inwinclientset.NewForConfig(config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to create blended clientset. %+v", err)
+		return nil, nil, fmt.Errorf("Failed to create inwinstack clientset. %+v", err)
 	}
 
 	ctx := &opkit.Context{
@@ -113,13 +126,40 @@ func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.Inwins
 	return ctx, inwinclient, nil
 }
 
+func (o *Operator) initResources() error {
+	glog.V(2).Info("Initialize the CRD resources.")
+
+	ctx := opkit.Context{
+		Clientset:             o.ctx.Clientset,
+		APIExtensionClientset: o.ctx.APIExtensionClientset,
+		Interval:              interval,
+		Timeout:               timeout,
+	}
+
+	if err := opkit.CreateCustomResources(ctx, o.resources); err != nil {
+		return fmt.Errorf("Failed to create custom resource. %+v", err)
+	}
+	return nil
+}
+
 func (o *Operator) Run() error {
+	for {
+		err := o.initResources()
+		if err == nil {
+			break
+		}
+		glog.Errorf("Failed to init resources. %+v. retrying...", err)
+		<-time.After(initRetryDelay)
+	}
+
 	signalChan := make(chan os.Signal, 1)
 	stopChan := make(chan struct{})
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// start watching the resources
 	o.service.StartWatch(v1.NamespaceAll, stopChan)
+	o.nat.StartWatch(v1.NamespaceAll, stopChan)
+	o.security.StartWatch(v1.NamespaceAll, stopChan)
 
 	for {
 		select {
