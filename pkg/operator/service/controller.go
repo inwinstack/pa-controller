@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/golang/glog"
 	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
@@ -42,12 +41,6 @@ var Resource = opkit.CustomResource{
 	Version: "v1",
 	Kind:    reflect.TypeOf(v1.Service{}).Name(),
 }
-
-var (
-	waitTimeout  = 5 * time.Second
-	retryTimeout = 1 * time.Second
-	attempts     = 3
-)
 
 type ServiceController struct {
 	ctx              *opkit.Context
