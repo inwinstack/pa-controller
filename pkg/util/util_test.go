@@ -22,20 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseIP(t *testing.T) {
-	tests := map[string]bool{
-		"172.22.132.10":   true,
-		"172.22.132.264":  false,
-		"172.22.132.0.43": false,
-	}
-
-	for param, result := range tests {
-		ip := ParseIP(param)
-		ok := (ip != nil)
-		assert.Equal(t, result, ok)
-	}
-}
-
 func errorGenerator(n int, retryable bool) func() error {
 	errorCount := 0
 	return func() (err error) {
@@ -60,5 +46,32 @@ func TestRetry(t *testing.T) {
 	f = errorGenerator(5, true)
 	if err := Retry(f, 1, 4); err == nil {
 		assert.Fail(t, "Error should have been raised by retry.")
+	}
+}
+
+func TestParseIP(t *testing.T) {
+	tests := map[string]bool{
+		"172.22.132.10":   true,
+		"172.22.132.264":  false,
+		"172.22.132.0.43": false,
+	}
+
+	for param, result := range tests {
+		ip := ParseIP(param)
+		ok := (ip != nil)
+		assert.Equal(t, result, ok)
+	}
+}
+
+func TestParseBool(t *testing.T) {
+	tests := map[string]bool{
+		"true":  true,
+		"false": false,
+		"132":   false,
+	}
+
+	for param, result := range tests {
+		ok := ParseBool(param)
+		assert.Equal(t, result, ok)
 	}
 }

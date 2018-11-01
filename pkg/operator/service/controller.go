@@ -47,18 +47,21 @@ type ServiceController struct {
 	inwinclient      inwinclientset.InwinstackV1Interface
 	paclient         *pautil.PaloAlto
 	ignoreNamespaces []string
+	commit           chan int
 }
 
 func NewController(
 	ctx *opkit.Context,
 	client inwinclientset.InwinstackV1Interface,
 	paclient *pautil.PaloAlto,
-	namespaces []string) *ServiceController {
+	namespaces []string,
+	commit chan int) *ServiceController {
 	return &ServiceController{
 		ctx:              ctx,
 		inwinclient:      client,
 		paclient:         paclient,
 		ignoreNamespaces: namespaces,
+		commit:           commit,
 	}
 }
 
@@ -155,6 +158,7 @@ func (c *ServiceController) syncSpec(old *v1.Service, svc *v1.Service) error {
 	ip := svc.Annotations[constants.AnnKeyPublicIP]
 	if util.ParseIP(ip) != nil {
 		ports := k8sutil.MarkChangePorts(old, svc)
+		c.syncService(svc)
 		c.syncNAT(svc, ip, ports)
 		c.syncSecurity(svc, ip, ports)
 	}
@@ -206,17 +210,32 @@ func (c *ServiceController) deallocatePublicIP(svc *v1.Service) error {
 	return nil
 }
 
-func (c *ServiceController) syncNAT(svc *v1.Service, ip string, ports map[v1.ServicePort]bool) {
-	t := svc.Annotations[constants.AnnKeyAllowNAT]
-	for port, retain := range ports {
-		proto := strings.ToLower(string(port.Protocol))
-		name := fmt.Sprintf("%s-%d", ip, port.Port)
-		switch {
-		case t == "true" && retain:
+// sync the PA service
+func (c *ServiceController) syncService(svc *v1.Service) {
+	n := util.ParseBool(svc.Annotations[constants.AnnKeyAllowNAT])
+	s := util.ParseBool(svc.Annotations[constants.AnnKeyAllowSecurity])
+
+	if n || s {
+		for _, port := range svc.Spec.Ports {
+			proto := strings.ToLower(string(port.Protocol))
 			if err := c.paclient.Service.Set(proto, port.Port); err != nil {
 				glog.Errorf("Failed to create PA service: %+v.", err)
 			}
+		}
 
+		// commit change to PA
+		if len(svc.Spec.Ports) != 0 {
+			c.commit <- 1
+		}
+	}
+}
+
+func (c *ServiceController) syncNAT(svc *v1.Service, ip string, ports map[v1.ServicePort]bool) {
+	t := util.ParseBool(svc.Annotations[constants.AnnKeyAllowNAT])
+	for port, retain := range ports {
+		name := fmt.Sprintf("%s-%d", ip, port.Port)
+		switch {
+		case t && retain:
 			if err := k8sutil.CreateOrUpdateNAT(c.inwinclient, name, ip, port.Port, svc); err != nil {
 				glog.Errorf("Failed to create and update NAT resource: %+v.", err)
 			}
@@ -229,13 +248,13 @@ func (c *ServiceController) syncNAT(svc *v1.Service, ip string, ports map[v1.Ser
 }
 
 func (c *ServiceController) syncSecurity(svc *v1.Service, ip string, ports map[v1.ServicePort]bool) {
-	t := svc.Annotations[constants.AnnKeyAllowSecurity]
+	t := util.ParseBool(svc.Annotations[constants.AnnKeyAllowSecurity])
 	for port, retain := range ports {
 		proto := strings.ToLower(string(port.Protocol))
 		service := fmt.Sprintf("k8s-%s%d", proto, port.Port)
 		name := fmt.Sprintf("%s-%d", ip, port.Port)
 		switch {
-		case t == "true" && retain:
+		case t && retain:
 			if err := k8sutil.CreateOrUpdateSecurity(c.inwinclient, name, ip, service, svc); err != nil {
 				glog.Errorf("Failed to create and update security resource: %+v.", err)
 			}

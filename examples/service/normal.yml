@@ -3,7 +3,7 @@ kind: Service
 metadata:
   annotations:
     inwinstack.com/allow-security-policy: "true"
-    inwinstack.com/allow-nat-policy: "true"
+    inwinstack.com/allow-nat-policy: "false"
   labels:
     run: nginx
   name: nginx

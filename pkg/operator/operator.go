@@ -90,7 +90,7 @@ func (o *Operator) Initialize() error {
 		return err
 	}
 
-	o.service = service.NewController(ctx, inwinclient, paclient, o.flag.IgnoreNamespaces)
+	o.service = service.NewController(ctx, inwinclient, paclient, o.flag.IgnoreNamespaces, o.commit)
 	o.security = security.NewController(ctx, inwinclient, paclient, o.flag.Retry, o.commit)
 	o.nat = nat.NewController(ctx, inwinclient, paclient, o.flag.Retry, o.commit)
 	o.ctx = ctx
