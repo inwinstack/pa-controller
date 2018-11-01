@@ -222,7 +222,7 @@ func (c *ServiceController) syncNAT(svc *v1.Service, ip string, ports map[v1.Ser
 			}
 		default:
 			if err := c.inwinclient.NATs(svc.Namespace).Delete(name, nil); err != nil {
-				glog.Errorf("Failed to delete NAT resource: %+v.", err)
+				glog.Warningf("Failed to delete NAT resource: %+v.", err)
 			}
 		}
 	}
@@ -241,7 +241,7 @@ func (c *ServiceController) syncSecurity(svc *v1.Service, ip string, ports map[v
 			}
 		default:
 			if err := c.inwinclient.Securities(svc.Namespace).Delete(name, nil); err != nil {
-				glog.Errorf("Failed to delete security resource: %+v.", err)
+				glog.Warningf("Failed to delete security resource: %+v.", err)
 			}
 		}
 	}
