@@ -17,7 +17,6 @@ limitations under the License.
 package k8sutil
 
 import (
-	"fmt"
 	"reflect"
 
 	inwinv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
@@ -64,7 +63,6 @@ func CreateOrUpdateNAT(c inwinclientset.InwinstackV1Interface, name, srcAddr str
 		nat.Spec.DatAddress = svc.Spec.ExternalIPs[0]
 		nat.Spec.DatPort = port
 		if _, err := c.NATs(svc.Namespace).Update(nat); err != nil {
-			fmt.Println(err)
 			return err
 		}
 		return nil

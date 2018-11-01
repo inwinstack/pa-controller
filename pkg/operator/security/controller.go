@@ -24,7 +24,6 @@ import (
 	opkit "github.com/inwinstack/operator-kit"
 	"github.com/inwinstack/pa-operator/pkg/constants"
 	"github.com/inwinstack/pa-operator/pkg/pautil"
-	"github.com/inwinstack/pa-operator/pkg/util"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
@@ -50,14 +49,22 @@ type SecurityController struct {
 	clientset inwinclientset.InwinstackV1Interface
 	paclient  *pautil.PaloAlto
 	retry     int
+	commit    chan int
 }
 
 func NewController(
 	ctx *opkit.Context,
 	clientset inwinclientset.InwinstackV1Interface,
 	paclient *pautil.PaloAlto,
-	retry int) *SecurityController {
-	return &SecurityController{ctx: ctx, clientset: clientset, paclient: paclient, retry: retry}
+	retry int,
+	commit chan int) *SecurityController {
+	return &SecurityController{
+		ctx:       ctx,
+		clientset: clientset,
+		paclient:  paclient,
+		retry:     retry,
+		commit:    commit,
+	}
 }
 
 func (c *SecurityController) StartWatch(namespace string, stopCh chan struct{}) error {
@@ -146,9 +153,7 @@ func (c *SecurityController) setAndUpdatePolicy(sec *inwinv1.Security) error {
 	}
 
 	// commit change to PA
-	if err := util.Retry(c.paclient.Commit, time.Second*2, c.retry); err != nil {
-		return err
-	}
+	c.commit <- 1
 
 	sec.Status.Phase = inwinv1.SecurityActive
 	sec.Status.LastUpdateTime = metav1.NewTime(time.Now())
@@ -165,9 +170,7 @@ func (c *SecurityController) deletePolicy(sec *inwinv1.Security) error {
 		}
 
 		// commit change to PA
-		if err := util.Retry(c.paclient.Commit, time.Second*2, c.retry); err != nil {
-			return err
-		}
+		c.commit <- 1
 	}
 	return nil
 }

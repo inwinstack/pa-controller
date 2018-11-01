@@ -19,6 +19,7 @@ var (
 	password   string
 	namespaces []string
 	retry      int
+	commitTime int
 	ver        bool
 )
 
@@ -29,6 +30,7 @@ func parserFlags() {
 	flag.StringVarP(&password, "pa-password", "", "", "Palo Alto API password.")
 	flag.StringSliceVarP(&namespaces, "ignore-namespaces", "", nil, "Set ignore namespaces for Kubernetes service.")
 	flag.IntVarP(&retry, "retry", "", 5, "Number of retry for PA failed job.")
+	flag.IntVarP(&commitTime, "commit-wait-time", "", 2, "The length of time to wait next PA commit.")
 	flag.BoolVarP(&ver, "version", "", false, "Display the version.")
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	flag.Parse()
@@ -49,6 +51,7 @@ func main() {
 		Kubeconfig:       kubeconfig,
 		IgnoreNamespaces: namespaces,
 		Retry:            retry,
+		CommitWaitTime:   commitTime,
 		PaloAlto: &pautil.Flag{
 			Host:     host,
 			Username: username,

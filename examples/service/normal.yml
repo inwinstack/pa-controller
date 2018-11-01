@@ -10,7 +10,7 @@ metadata:
   namespace: test
 spec:
   externalIPs:
-  - 172.29.188.2
+  - 172.22.132.192
   externalTrafficPolicy: Cluster
   ports:
   - name: http-80
