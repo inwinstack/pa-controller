@@ -20,7 +20,7 @@ import (
 	"github.com/PaloAltoNetworks/pango"
 )
 
-type PaloAltoFlag struct {
+type Flag struct {
 	Host     string
 	Username string
 	Password string
@@ -28,12 +28,12 @@ type PaloAltoFlag struct {
 
 type PaloAlto struct {
 	client   *pango.Firewall
-	Nat      Nat
+	NAT      Nat
 	Security Security
 	Service  Service
 }
 
-func NewClient(flag *PaloAltoFlag) (*PaloAlto, error) {
+func NewClient(flag *Flag) (*PaloAlto, error) {
 	client := &pango.Firewall{Client: pango.Client{
 		Hostname: flag.Host,
 		Username: flag.Username,
@@ -46,7 +46,7 @@ func NewClient(flag *PaloAltoFlag) (*PaloAlto, error) {
 	}
 
 	pa := &PaloAlto{client: client}
-	pa.Nat = &NatOp{policies: client.Policies}
+	pa.NAT = &NatOp{policies: client.Policies}
 	pa.Security = &SecurityOp{policies: client.Policies}
 	pa.Service = &ServiceOp{objs: client.Objects}
 	return pa, nil

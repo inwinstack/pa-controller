@@ -17,55 +17,22 @@ limitations under the License.
 package k8sutil
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/golang/glog"
 	inwinv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
 	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
-	"github.com/inwinstack/pa-operator/pkg/constants"
-	"k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
-func GetRestConfig(kubeconfig string) (*rest.Config, error) {
-	if kubeconfig != "" {
-		cfg, err := clientcmd.BuildConfigFromFlags("master", kubeconfig)
-		if err != nil {
-			return nil, err
-		}
-		return cfg, nil
-	}
-
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-	return cfg, nil
-}
-
-func FilterServices(svcs *v1.ServiceList, addr string) {
-	var items []v1.Service
-	for _, svc := range svcs.Items {
-		v := svc.Annotations[constants.AnnKeyPublicIP]
-		if v == addr {
-			items = append(items, svc)
-		}
-	}
-	svcs.Items = items
-}
-
-func NewIP(namespace, poolName string) *inwinv1.IP {
+func NewIP(name, namespace, poolName string) *inwinv1.IP {
 	return &inwinv1.IP{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s", uuid.NewUUID()),
+			Name:      name,
 			Namespace: namespace,
 		},
 		Spec: inwinv1.IPSpec{
@@ -73,17 +40,6 @@ func NewIP(namespace, poolName string) *inwinv1.IP {
 			UpdateNamespace: false,
 		},
 	}
-}
-
-func FilterIPs(ips *inwinv1.IPList, addr, pool string) {
-	var items []inwinv1.IP
-	for _, ip := range ips.Items {
-		v := ip.Annotations[constants.AnnKeyExternalIP]
-		if ip.Spec.PoolName == pool && v == addr {
-			items = append(items, ip)
-		}
-	}
-	ips.Items = items
 }
 
 func WaitForIP(c inwinclientset.InwinstackV1Interface, ns, name string, timeout time.Duration) error {

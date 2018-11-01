@@ -17,14 +17,12 @@ limitations under the License.
 package util
 
 import (
-	"log"
 	"net"
+	"strconv"
 	"time"
-)
 
-func ParseIP(s string) net.IP {
-	return net.ParseIP(s)
-}
+	"github.com/golang/glog"
+)
 
 type RetriableError struct {
 	Err error
@@ -38,8 +36,20 @@ func Retry(callback func() error, d time.Duration, attempts int) (err error) {
 		if err == nil {
 			return nil
 		}
-		log.Printf("Error: %s, Retrying in %s. %d Retries remaining.", err, d, attempts-i)
+		glog.Errorf("Error: %s, Retrying in %s. %d Retries remaining.", err, d, attempts-i)
 		time.Sleep(d)
 	}
 	return err
+}
+
+func ParseIP(s string) net.IP {
+	return net.ParseIP(s)
+}
+
+func ParseBool(s string) bool {
+	ok, err := strconv.ParseBool(s)
+	if err != nil {
+		return false
+	}
+	return ok
 }

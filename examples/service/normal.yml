@@ -3,14 +3,14 @@ kind: Service
 metadata:
   annotations:
     inwinstack.com/allow-security-policy: "true"
-    inwinstack.com/allow-nat-policy: "true"
+    inwinstack.com/allow-nat-policy: "false"
   labels:
     run: nginx
   name: nginx
   namespace: test
 spec:
   externalIPs:
-  - 172.29.188.2
+  - 172.22.132.192
   externalTrafficPolicy: Cluster
   ports:
   - name: http-80

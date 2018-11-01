@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/inwinstack/pa-operator/pkg/operator"
-	"github.com/inwinstack/pa-operator/pkg/util/pautil"
+	"github.com/inwinstack/pa-operator/pkg/pautil"
 	"github.com/inwinstack/pa-operator/pkg/version"
 	flag "github.com/spf13/pflag"
 )
@@ -18,6 +18,8 @@ var (
 	username   string
 	password   string
 	namespaces []string
+	retry      int
+	commitTime int
 	ver        bool
 )
 
@@ -27,7 +29,9 @@ func parserFlags() {
 	flag.StringVarP(&username, "pa-username", "", "", "Palo Alto API username.")
 	flag.StringVarP(&password, "pa-password", "", "", "Palo Alto API password.")
 	flag.StringSliceVarP(&namespaces, "ignore-namespaces", "", nil, "Set ignore namespaces for Kubernetes service.")
-	flag.BoolVarP(&ver, "version", "", false, "Display the version of subserver.")
+	flag.IntVarP(&retry, "retry", "", 5, "Number of retry for PA failed job.")
+	flag.IntVarP(&commitTime, "commit-wait-time", "", 2, "The length of time to wait next PA commit.")
+	flag.BoolVarP(&ver, "version", "", false, "Display the version.")
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	flag.Parse()
 }
@@ -46,7 +50,9 @@ func main() {
 	f := &operator.Flag{
 		Kubeconfig:       kubeconfig,
 		IgnoreNamespaces: namespaces,
-		PaloAlto: &pautil.PaloAltoFlag{
+		Retry:            retry,
+		CommitWaitTime:   commitTime,
+		PaloAlto: &pautil.Flag{
 			Host:     host,
 			Username: username,
 			Password: password,

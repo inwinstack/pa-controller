@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    inwinstack.com/allow-security-policy: "true"
+    inwinstack.com/allow-nat-policy: "true"
+  labels:
+    run: nginx
+  name: nginx1
+  namespace: test
+spec:
+  type: ClusterIP
+  externalIPs:
+  - 172.22.132.192
+  ports:
+  - name: http-80
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    run: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    inwinstack.com/allow-security-policy: "true"
+    inwinstack.com/allow-nat-policy: "true"
+  labels:
+    run: nginx
+  name: nginx2
+  namespace: test
+spec:
+  type: ClusterIP
+  externalIPs:
+  - 172.22.132.193
+  ports:
+  - name: http-80
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    run: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    inwinstack.com/allow-security-policy: "true"
+    inwinstack.com/allow-nat-policy: "true"
+  labels:
+    run: nginx
+  name: nginx3
+  namespace: test
+spec:
+  type: ClusterIP
+  externalIPs:
+  - 172.22.132.192
+  ports:
+  - name: http-8080
+    port: 8080
+    protocol: TCP
+    targetPort: 80
+  selector:
+    run: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    inwinstack.com/allow-security-policy: "true"
+    inwinstack.com/allow-nat-policy: "true"
+  labels:
+    run: nginx
+  name: nginx4
+  namespace: test
+spec:
+  type: ClusterIP
+  externalIPs:
+  - 172.22.132.192
+  ports:
+  - name: http-8088
+    port: 8088
+    protocol: TCP
+    targetPort: 80
+  selector:
+    run: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    inwinstack.com/allow-security-policy: "true"
+    inwinstack.com/allow-nat-policy: "true"
+  labels:
+    run: nginx
+  name: nginx5
+  namespace: test
+spec:
+  type: ClusterIP
+  externalIPs:
+  - 172.22.132.193
+  ports:
+  - name: http-8088
+    port: 8088
+    protocol: TCP
+    targetPort: 80
+  selector:
+    run: nginx
