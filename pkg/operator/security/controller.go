@@ -83,7 +83,7 @@ func (c *SecurityController) onAdd(obj interface{}) {
 
 	if sec.Status.Phase == inwinv1.SecurityPending {
 		if err := c.setAndUpdatePolicy(sec); err != nil {
-			glog.Errorf("Failed to set policy on Security %s in %s namespace: %s.", sec.Name, sec.Namespace, err)
+			glog.Errorf("Failed to set policy on Security %s in %s namespace: %+v.", sec.Name, sec.Namespace, err)
 		}
 	}
 }
@@ -95,7 +95,7 @@ func (c *SecurityController) onUpdate(oldObj, newObj interface{}) {
 
 	if !reflect.DeepEqual(old.Spec, sec.Spec) || sec.Status.Phase == inwinv1.SecurityPending {
 		if err := c.setAndUpdatePolicy(sec); err != nil {
-			glog.Errorf("Failed to update policy on Security %s in %s namespace: %s.", sec.Name, sec.Namespace, err)
+			glog.Errorf("Failed to update policy on Security %s in %s namespace: %+v.", sec.Name, sec.Namespace, err)
 		}
 	}
 }
@@ -105,7 +105,7 @@ func (c *SecurityController) onDelete(obj interface{}) {
 	glog.V(2).Infof("Received delete on Security %s in %s namespace.", sec.Name, sec.Namespace)
 
 	if err := c.deletePolicy(sec); err != nil {
-		glog.Errorf("Failed to delete policy on Security %s in %s namespace: %s.", sec.Name, sec.Namespace, err)
+		glog.Errorf("Failed to delete policy on Security %s in %s namespace: %+v.", sec.Name, sec.Namespace, err)
 	}
 }
 

@@ -82,7 +82,7 @@ func (c *NATController) onAdd(obj interface{}) {
 
 	if nat.Status.Phase == inwinv1.NATPending {
 		if err := c.setAndUpdatePolicy(nat); err != nil {
-			glog.Errorf("Failed to set policy on NAT %s in %s namespace: %s.", nat.Name, nat.Namespace, err)
+			glog.Errorf("Failed to set policy on NAT %s in %s namespace: %+v.", nat.Name, nat.Namespace, err)
 		}
 	}
 }
@@ -94,7 +94,7 @@ func (c *NATController) onUpdate(oldObj, newObj interface{}) {
 
 	if !reflect.DeepEqual(old.Spec, nat.Spec) || nat.Status.Phase == inwinv1.NATPending {
 		if err := c.setAndUpdatePolicy(nat); err != nil {
-			glog.Errorf("Failed to update policy on NAT %s in %s namespace: %s.", nat.Name, nat.Namespace, err)
+			glog.Errorf("Failed to update policy on NAT %s in %s namespace: %+v.", nat.Name, nat.Namespace, err)
 		}
 	}
 }
@@ -104,7 +104,7 @@ func (c *NATController) onDelete(obj interface{}) {
 	glog.V(2).Infof("Received delete on NAT %s in %s namespace.", nat.Name, nat.Namespace)
 
 	if err := c.deletePolicy(nat); err != nil {
-		glog.Errorf("Failed to delete policy on NAT %s in %s namespace: %s.", nat.Name, nat.Namespace, err)
+		glog.Errorf("Failed to delete policy on NAT %s in %s namespace: %+v.", nat.Name, nat.Namespace, err)
 	}
 }
 

@@ -81,7 +81,7 @@ func (c *ServiceController) onAdd(obj interface{}) {
 
 	c.makeAnnotations(svc)
 	if err := c.syncSpec(nil, svc); err != nil {
-		glog.Errorf("Failed to sync spec on Service %s in %s namespace: %s.", svc.Name, svc.Namespace, err)
+		glog.Errorf("Failed to sync spec on Service %s in %s namespace: %+v.", svc.Name, svc.Namespace, err)
 	}
 }
 
@@ -92,7 +92,7 @@ func (c *ServiceController) onUpdate(oldObj, newObj interface{}) {
 
 	if svc.DeletionTimestamp == nil {
 		if err := c.syncSpec(old, svc); err != nil {
-			glog.Errorf("Failed to sync spec on Service %s in %s namespace: %s.", svc.Name, svc.Namespace, err)
+			glog.Errorf("Failed to sync spec on Service %s in %s namespace: %+v.", svc.Name, svc.Namespace, err)
 		}
 	}
 }
@@ -110,7 +110,7 @@ func (c *ServiceController) onDelete(obj interface{}) {
 	}
 
 	if err := c.deallocatePublicIP(svc); err != nil {
-		glog.Errorf("Failed to deallocate IP on Service %s in %s namespace: %s.", svc.Name, svc.Namespace, err)
+		glog.Errorf("Failed to deallocate IP on Service %s in %s namespace: %+v.", svc.Name, svc.Namespace, err)
 	}
 }
 
@@ -155,13 +155,8 @@ func (c *ServiceController) syncSpec(old *v1.Service, svc *v1.Service) error {
 	ip := svc.Annotations[constants.AnnKeyPublicIP]
 	if util.ParseIP(ip) != nil {
 		ports := k8sutil.MarkChangePorts(old, svc)
-		if err := c.syncNAT(svc, ip, ports); err != nil {
-			glog.Errorf("Failed to create and update NAT: %s.", err)
-		}
-
-		if err := c.syncSecurity(svc, ip, ports); err != nil {
-			glog.Errorf("Failed to create and update Security: %s.", err)
-		}
+		c.syncNAT(svc, ip, ports)
+		c.syncSecurity(svc, ip, ports)
 	}
 
 	c.makeRefresh(svc)
@@ -211,7 +206,7 @@ func (c *ServiceController) deallocatePublicIP(svc *v1.Service) error {
 	return nil
 }
 
-func (c *ServiceController) syncNAT(svc *v1.Service, ip string, ports map[v1.ServicePort]bool) error {
+func (c *ServiceController) syncNAT(svc *v1.Service, ip string, ports map[v1.ServicePort]bool) {
 	t := svc.Annotations[constants.AnnKeyAllowNAT]
 	for port, retain := range ports {
 		proto := strings.ToLower(string(port.Protocol))
@@ -219,20 +214,21 @@ func (c *ServiceController) syncNAT(svc *v1.Service, ip string, ports map[v1.Ser
 		switch {
 		case t == "true" && retain:
 			if err := c.paclient.Service.Set(proto, port.Port); err != nil {
-				return err
+				glog.Errorf("Failed to create PA service: %+v.", err)
 			}
 
 			if err := k8sutil.CreateOrUpdateNAT(c.inwinclient, name, ip, port.Port, svc); err != nil {
-				return err
+				glog.Errorf("Failed to create and update NAT resource: %+v.", err)
 			}
 		default:
-			c.inwinclient.NATs(svc.Namespace).Delete(name, nil)
+			if err := c.inwinclient.NATs(svc.Namespace).Delete(name, nil); err != nil {
+				glog.Errorf("Failed to delete NAT resource: %+v.", err)
+			}
 		}
 	}
-	return nil
 }
 
-func (c *ServiceController) syncSecurity(svc *v1.Service, ip string, ports map[v1.ServicePort]bool) error {
+func (c *ServiceController) syncSecurity(svc *v1.Service, ip string, ports map[v1.ServicePort]bool) {
 	t := svc.Annotations[constants.AnnKeyAllowSecurity]
 	for port, retain := range ports {
 		proto := strings.ToLower(string(port.Protocol))
@@ -241,11 +237,12 @@ func (c *ServiceController) syncSecurity(svc *v1.Service, ip string, ports map[v
 		switch {
 		case t == "true" && retain:
 			if err := k8sutil.CreateOrUpdateSecurity(c.inwinclient, name, ip, service, svc); err != nil {
-				return err
+				glog.Errorf("Failed to create and update security resource: %+v.", err)
 			}
 		default:
-			c.inwinclient.Securities(svc.Namespace).Delete(ip, nil)
+			if err := c.inwinclient.Securities(svc.Namespace).Delete(name, nil); err != nil {
+				glog.Errorf("Failed to delete security resource: %+v.", err)
+			}
 		}
 	}
-	return nil
 }
