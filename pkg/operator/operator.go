@@ -61,10 +61,9 @@ type Operator struct {
 	security *security.SecurityController
 	nat      *nat.NATController
 
-	// PA resources
+	// PA
 	paclient *pautil.PaloAlto
 	commit   chan int
-	count    int
 }
 
 func NewMainOperator(flag *Flag) *Operator {
@@ -72,7 +71,6 @@ func NewMainOperator(flag *Flag) *Operator {
 		resources: []opkit.CustomResource{nat.Resource, security.Resource},
 		flag:      flag,
 		commit:    make(chan int, 1),
-		count:     0,
 	}
 }
 

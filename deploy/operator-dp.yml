@@ -27,3 +27,5 @@ spec:
         - --pa-host=172.22.132.114
         - --pa-username=admin
         - --pa-password=admin
+        - --commit-wait-time=2
+        - --retry=5
