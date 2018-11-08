@@ -21,20 +21,20 @@ import (
 	"github.com/PaloAltoNetworks/pango/poli/nat"
 )
 
-type Nat interface {
+type NAT interface {
 	List() ([]string, error)
 	Get(string) (*nat.Entry, error)
 	Set(*nat.Entry) error
 	Delete(string) error
 }
 
-type NatOp struct {
+type NATOp struct {
 	policies *poli.FwPoli
 }
 
-var _ Nat = &NatOp{}
+var _ NAT = &NATOp{}
 
-func (op *NatOp) List() ([]string, error) {
+func (op *NATOp) List() ([]string, error) {
 	policies, err := op.policies.Nat.GetList("")
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (op *NatOp) List() ([]string, error) {
 	return policies, nil
 }
 
-func (op *NatOp) Get(name string) (*nat.Entry, error) {
+func (op *NATOp) Get(name string) (*nat.Entry, error) {
 	entry, err := op.policies.Nat.Get("", name)
 	if err != nil {
 		return nil, err
@@ -50,14 +50,14 @@ func (op *NatOp) Get(name string) (*nat.Entry, error) {
 	return &entry, nil
 }
 
-func (op *NatOp) Set(entry *nat.Entry) error {
+func (op *NATOp) Set(entry *nat.Entry) error {
 	if err := op.policies.Nat.Edit("", *entry); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (op *NatOp) Delete(name string) error {
+func (op *NATOp) Delete(name string) error {
 	if err := op.policies.Nat.Delete("", name); err != nil {
 		return err
 	}

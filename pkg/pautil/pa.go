@@ -28,7 +28,7 @@ type Flag struct {
 
 type PaloAlto struct {
 	client   *pango.Firewall
-	NAT      Nat
+	NAT      NAT
 	Security Security
 	Service  Service
 }
@@ -46,7 +46,7 @@ func NewClient(flag *Flag) (*PaloAlto, error) {
 	}
 
 	pa := &PaloAlto{client: client}
-	pa.NAT = &NatOp{policies: client.Policies}
+	pa.NAT = &NATOp{policies: client.Policies}
 	pa.Security = &SecurityOp{policies: client.Policies}
 	pa.Service = &ServiceOp{objs: client.Objects}
 	return pa, nil
