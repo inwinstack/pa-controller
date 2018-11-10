@@ -22,6 +22,7 @@ import (
 	inwinv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
 	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
 	opkit "github.com/inwinstack/operator-kit"
+	"github.com/inwinstack/pa-operator/pkg/config"
 	"github.com/inwinstack/pa-operator/pkg/constants"
 	"github.com/inwinstack/pa-operator/pkg/pautil"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -46,8 +47,8 @@ var Resource = opkit.CustomResource{
 type NATController struct {
 	ctx       *opkit.Context
 	clientset inwinclientset.InwinstackV1Interface
+	conf      *config.OperatorConfig
 	paclient  *pautil.PaloAlto
-	retry     int
 	commit    chan int
 }
 
@@ -55,13 +56,13 @@ func NewController(
 	ctx *opkit.Context,
 	clientset inwinclientset.InwinstackV1Interface,
 	paclient *pautil.PaloAlto,
-	retry int,
+	conf *config.OperatorConfig,
 	commit chan int) *NATController {
 	return &NATController{
 		ctx:       ctx,
 		clientset: clientset,
 		paclient:  paclient,
-		retry:     retry,
+		conf:      conf,
 		commit:    commit,
 	}
 }
@@ -135,10 +136,10 @@ func (c *NATController) setAndUpdatePolicy(n *inwinv1.NAT) error {
 	if err := c.paclient.NAT.Set(entry); err != nil {
 		retry := c.getRetry(n)
 		switch {
-		case retry < c.retry:
+		case retry < c.conf.Retry:
 			retry++
 			c.setRetry(n, retry)
-		case retry >= c.retry:
+		case retry >= c.conf.Retry:
 			n.Status.Phase = inwinv1.NATFailed
 			delete(n.Annotations, constants.AnnKeyPolicyRetry)
 		}

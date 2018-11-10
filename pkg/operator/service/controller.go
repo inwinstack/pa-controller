@@ -24,6 +24,7 @@ import (
 	"github.com/golang/glog"
 	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
 	opkit "github.com/inwinstack/operator-kit"
+	"github.com/inwinstack/pa-operator/pkg/config"
 	"github.com/inwinstack/pa-operator/pkg/constants"
 	"github.com/inwinstack/pa-operator/pkg/k8sutil"
 	"github.com/inwinstack/pa-operator/pkg/pautil"
@@ -43,25 +44,25 @@ var Resource = opkit.CustomResource{
 }
 
 type ServiceController struct {
-	ctx              *opkit.Context
-	inwinclient      inwinclientset.InwinstackV1Interface
-	paclient         *pautil.PaloAlto
-	ignoreNamespaces []string
-	commit           chan int
+	ctx         *opkit.Context
+	inwinclient inwinclientset.InwinstackV1Interface
+	paclient    *pautil.PaloAlto
+	conf        *config.OperatorConfig
+	commit      chan int
 }
 
 func NewController(
 	ctx *opkit.Context,
 	client inwinclientset.InwinstackV1Interface,
 	paclient *pautil.PaloAlto,
-	namespaces []string,
+	conf *config.OperatorConfig,
 	commit chan int) *ServiceController {
 	return &ServiceController{
-		ctx:              ctx,
-		inwinclient:      client,
-		paclient:         paclient,
-		ignoreNamespaces: namespaces,
-		commit:           commit,
+		ctx:         ctx,
+		inwinclient: client,
+		paclient:    paclient,
+		conf:        conf,
+		commit:      commit,
 	}
 }
 
@@ -104,7 +105,7 @@ func (c *ServiceController) onDelete(obj interface{}) {
 	svc := obj.(*v1.Service).DeepCopy()
 	glog.V(2).Infof("Received delete on Service %s in %s namespace.", svc.Name, svc.Namespace)
 
-	if slice.Contains(c.ignoreNamespaces, svc.Namespace) {
+	if slice.Contains(c.conf.IgnoreNamespaces, svc.Namespace) {
 		return
 	}
 
@@ -143,7 +144,7 @@ func (c *ServiceController) makeRefresh(svc *v1.Service) {
 }
 
 func (c *ServiceController) syncSpec(old *v1.Service, svc *v1.Service) error {
-	if slice.Contains(c.ignoreNamespaces, svc.Namespace) {
+	if slice.Contains(c.conf.IgnoreNamespaces, svc.Namespace) {
 		return nil
 	}
 

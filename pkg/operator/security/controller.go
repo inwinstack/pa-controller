@@ -22,6 +22,7 @@ import (
 	inwinv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
 	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
 	opkit "github.com/inwinstack/operator-kit"
+	"github.com/inwinstack/pa-operator/pkg/config"
 	"github.com/inwinstack/pa-operator/pkg/constants"
 	"github.com/inwinstack/pa-operator/pkg/pautil"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -47,8 +48,8 @@ var Resource = opkit.CustomResource{
 type SecurityController struct {
 	ctx       *opkit.Context
 	clientset inwinclientset.InwinstackV1Interface
+	conf      *config.OperatorConfig
 	paclient  *pautil.PaloAlto
-	retry     int
 	commit    chan int
 }
 
@@ -56,13 +57,13 @@ func NewController(
 	ctx *opkit.Context,
 	clientset inwinclientset.InwinstackV1Interface,
 	paclient *pautil.PaloAlto,
-	retry int,
+	conf *config.OperatorConfig,
 	commit chan int) *SecurityController {
 	return &SecurityController{
 		ctx:       ctx,
 		clientset: clientset,
 		paclient:  paclient,
-		retry:     retry,
+		conf:      conf,
 		commit:    commit,
 	}
 }
@@ -131,22 +132,36 @@ func (c *SecurityController) setRetry(sec *inwinv1.Security, retry int) {
 	sec.Annotations[constants.AnnKeyPolicyRetry] = strconv.Itoa(retry)
 }
 
+func (c *SecurityController) checkRetry(sec *inwinv1.Security, err error) error {
+	retry := c.getRetry(sec)
+	switch {
+	case retry < c.conf.Retry:
+		retry++
+		c.setRetry(sec, retry)
+	case retry >= c.conf.Retry:
+		sec.Status.Phase = inwinv1.SecurityFailed
+		delete(sec.Annotations, constants.AnnKeyPolicyRetry)
+	}
+
+	sec.Status.Reason = err.Error()
+	sec.Status.LastUpdateTime = metav1.NewTime(time.Now())
+	if _, serr := c.clientset.Securities(sec.Namespace).Update(sec); serr != nil {
+		return serr
+	}
+	return nil
+}
+
 func (c *SecurityController) setAndUpdatePolicy(sec *inwinv1.Security) error {
 	entry := pautil.ToSecurityEntry(sec)
 	if err := c.paclient.Security.Set(entry); err != nil {
-		retry := c.getRetry(sec)
-		switch {
-		case retry < c.retry:
-			retry++
-			c.setRetry(sec, retry)
-		case retry >= c.retry:
-			sec.Status.Phase = inwinv1.SecurityFailed
-			delete(sec.Annotations, constants.AnnKeyPolicyRetry)
+		if serr := c.checkRetry(sec, err); serr != nil {
+			return serr
 		}
+		return err
+	}
 
-		sec.Status.Reason = err.Error()
-		sec.Status.LastUpdateTime = metav1.NewTime(time.Now())
-		if _, serr := c.clientset.Securities(sec.Namespace).Update(sec); serr != nil {
+	if err := c.paclient.Security.Move(c.conf.MoveType, c.conf.MoveRelationRule, entry); err != nil {
+		if serr := c.checkRetry(sec, err); serr != nil {
 			return serr
 		}
 		return err
