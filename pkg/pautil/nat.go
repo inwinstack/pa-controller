@@ -51,15 +51,9 @@ func (op *NATOp) Get(name string) (*nat.Entry, error) {
 }
 
 func (op *NATOp) Set(entry *nat.Entry) error {
-	if err := op.policies.Nat.Edit("", *entry); err != nil {
-		return err
-	}
-	return nil
+	return op.policies.Nat.Edit("", *entry)
 }
 
 func (op *NATOp) Delete(name string) error {
-	if err := op.policies.Nat.Delete("", name); err != nil {
-		return err
-	}
-	return nil
+	return op.policies.Nat.Delete("", name)
 }

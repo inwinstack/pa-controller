@@ -26,6 +26,7 @@ type Security interface {
 	Get(string) (*security.Entry, error)
 	Set(*security.Entry) error
 	Delete(string) error
+	Move(int, string, *security.Entry) error
 }
 
 type SecurityOp struct {
@@ -51,15 +52,13 @@ func (op *SecurityOp) Get(name string) (*security.Entry, error) {
 }
 
 func (op *SecurityOp) Set(entry *security.Entry) error {
-	if err := op.policies.Security.Edit("", *entry); err != nil {
-		return err
-	}
-	return nil
+	return op.policies.Security.Edit("", *entry)
 }
 
 func (op *SecurityOp) Delete(name string) error {
-	if err := op.policies.Security.Delete("", name); err != nil {
-		return err
-	}
-	return nil
+	return op.policies.Security.Delete("", name)
+}
+
+func (op *SecurityOp) Move(movement int, rule string, entry *security.Entry) error {
+	return op.policies.Security.MoveGroup("", movement, rule, *entry)
 }

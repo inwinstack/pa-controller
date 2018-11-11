@@ -26,6 +26,7 @@ import (
 	"github.com/golang/glog"
 	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
 	opkit "github.com/inwinstack/operator-kit"
+	"github.com/inwinstack/pa-operator/pkg/config"
 	"github.com/inwinstack/pa-operator/pkg/k8sutil"
 	"github.com/inwinstack/pa-operator/pkg/operator/nat"
 	"github.com/inwinstack/pa-operator/pkg/operator/security"
@@ -43,17 +44,9 @@ const (
 	timeout        = 60 * time.Second
 )
 
-type Flag struct {
-	Kubeconfig       string
-	IgnoreNamespaces []string
-	Retry            int
-	CommitWaitTime   int
-	PaloAlto         *pautil.Flag
-}
-
 type Operator struct {
 	ctx       *opkit.Context
-	flag      *Flag
+	conf      *config.OperatorConfig
 	resources []opkit.CustomResource
 
 	// Resource controllers
@@ -66,10 +59,10 @@ type Operator struct {
 	commit   chan int
 }
 
-func NewMainOperator(flag *Flag) *Operator {
+func NewMainOperator(conf *config.OperatorConfig) *Operator {
 	return &Operator{
 		resources: []opkit.CustomResource{nat.Resource, security.Resource},
-		flag:      flag,
+		conf:      conf,
 		commit:    make(chan int, 1),
 	}
 }
@@ -77,7 +70,7 @@ func NewMainOperator(flag *Flag) *Operator {
 func (o *Operator) Initialize() error {
 	glog.V(2).Info("Initialize the operator resources.")
 
-	paclient, err := pautil.NewClient(o.flag.PaloAlto)
+	paclient, err := pautil.NewClient(o.conf.PaloAlto)
 	if err != nil {
 		return err
 	}
@@ -88,9 +81,9 @@ func (o *Operator) Initialize() error {
 		return err
 	}
 
-	o.service = service.NewController(ctx, inwinclient, paclient, o.flag.IgnoreNamespaces, o.commit)
-	o.security = security.NewController(ctx, inwinclient, paclient, o.flag.Retry, o.commit)
-	o.nat = nat.NewController(ctx, inwinclient, paclient, o.flag.Retry, o.commit)
+	o.service = service.NewController(ctx, inwinclient, paclient, o.conf, o.commit)
+	o.security = security.NewController(ctx, inwinclient, paclient, o.conf, o.commit)
+	o.nat = nat.NewController(ctx, inwinclient, paclient, o.conf, o.commit)
 	o.ctx = ctx
 	o.paclient = paclient
 	return nil
@@ -105,7 +98,7 @@ func (o *Operator) showPaloAltoInfos(paclient *pautil.PaloAlto) {
 func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.InwinstackV1Interface, error) {
 	glog.V(2).Info("Initialize the operator context and client.")
 
-	config, err := k8sutil.GetRestConfig(o.flag.Kubeconfig)
+	config, err := k8sutil.GetRestConfig(o.conf.Kubeconfig)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to get Kubernetes config. %+v", err)
 	}
@@ -154,10 +147,10 @@ func (o *Operator) handleCommitJob() {
 	for {
 		select {
 		case <-o.commit:
-			run := waitNextCommitJob(o.commit, time.Second*time.Duration(o.flag.CommitWaitTime))
+			run := waitNextCommitJob(o.commit, time.Second*time.Duration(o.conf.CommitWaitTime))
 			if run {
 				glog.V(3).Infoln("Received commit job signal...")
-				util.Retry(o.paclient.Commit, time.Second*1, o.flag.Retry)
+				util.Retry(o.paclient.Commit, time.Second*1, o.conf.Retry)
 			}
 		}
 	}

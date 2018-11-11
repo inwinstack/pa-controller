@@ -60,16 +60,9 @@ func (op *ServiceOp) Set(protocol string, port int32) error {
 		SourcePort:      "",
 		DestinationPort: fmt.Sprintf("%d", port),
 	}
-
-	if err := op.objs.Services.Edit("", svc); err != nil {
-		return err
-	}
-	return nil
+	return op.objs.Services.Edit("", svc)
 }
 
 func (op *ServiceOp) Delete(name string) error {
-	if err := op.objs.Services.Delete("", name); err != nil {
-		return err
-	}
-	return nil
+	return op.objs.Services.Delete("", name)
 }
