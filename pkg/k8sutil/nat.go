@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func newNAT(name, srcAddr string, port int32, svc *v1.Service) *inwinv1.NAT {
+func newNAT(name, srcAddr, service string, port int32, svc *v1.Service) *inwinv1.NAT {
 	return &inwinv1.NAT{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -47,7 +47,7 @@ func newNAT(name, srcAddr string, port int32, svc *v1.Service) *inwinv1.NAT {
 			DestinationAddresses: []string{srcAddr},
 			DestinationZone:      "untrust",
 			ToInterface:          "any",
-			Service:              "any",
+			Service:              service,
 			SatType:              inwinv1.NATSatNone,
 			DatType:              inwinv1.NATDatStatic,
 			DatAddress:           svc.Spec.ExternalIPs[0],
@@ -56,7 +56,7 @@ func newNAT(name, srcAddr string, port int32, svc *v1.Service) *inwinv1.NAT {
 	}
 }
 
-func CreateOrUpdateNAT(c inwinclientset.InwinstackV1Interface, name, srcAddr string, port int32, svc *v1.Service) error {
+func CreateOrUpdateNAT(c inwinclientset.InwinstackV1Interface, name, srcAddr, service string, port int32, svc *v1.Service) error {
 	nat, err := c.NATs(svc.Namespace).Get(name, metav1.GetOptions{})
 	if err == nil {
 		nat.Spec.DestinationAddresses = []string{srcAddr}
@@ -68,7 +68,7 @@ func CreateOrUpdateNAT(c inwinclientset.InwinstackV1Interface, name, srcAddr str
 		return nil
 	}
 
-	newNAT := newNAT(name, srcAddr, port, svc)
+	newNAT := newNAT(name, srcAddr, service, port, svc)
 	if _, err := c.NATs(svc.Namespace).Create(newNAT); err != nil {
 		return err
 	}

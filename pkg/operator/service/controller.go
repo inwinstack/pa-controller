@@ -234,10 +234,12 @@ func (c *ServiceController) syncService(svc *v1.Service) {
 func (c *ServiceController) syncNAT(svc *v1.Service, ip string, ports map[v1.ServicePort]bool) {
 	t := util.ParseBool(svc.Annotations[constants.AnnKeyAllowNAT])
 	for port, retain := range ports {
+		proto := strings.ToLower(string(port.Protocol))
+		service := fmt.Sprintf("k8s-%s%d", proto, port.Port)
 		name := fmt.Sprintf("%s-%d", ip, port.Port)
 		switch {
 		case t && retain:
-			if err := k8sutil.CreateOrUpdateNAT(c.inwinclient, name, ip, port.Port, svc); err != nil {
+			if err := k8sutil.CreateOrUpdateNAT(c.inwinclient, name, ip, service, port.Port, svc); err != nil {
 				glog.Errorf("Failed to create and update NAT resource: %+v.", err)
 			}
 		default:
