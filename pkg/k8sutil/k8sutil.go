@@ -17,7 +17,7 @@ limitations under the License.
 package k8sutil
 
 import (
-	"github.com/inwinstack/pa-operator/pkg/constants"
+	"github.com/inwinstack/pa-controller/pkg/constants"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
