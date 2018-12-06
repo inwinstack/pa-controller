@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: pa-operator
+  name: pa-controller
   namespace: kube-system
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: pa-operator-role
+  name: pa-controller-role
 rules:
 - apiGroups:
   - ""
@@ -36,12 +36,12 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: pa-operator-rolebinding
+  name: pa-controller-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: pa-operator-role
+  name: pa-controller-role
 subjects:
 - kind: ServiceAccount
   namespace: kube-system
-  name: pa-operator
+  name: pa-controller

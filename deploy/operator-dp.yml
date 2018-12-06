@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pa-operator
+  name: pa-controller
   namespace: kube-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pa-operator
+      app: pa-controller
   template:
     metadata:
       labels:
-        app: pa-operator
+        app: pa-controller
     spec:
       tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/master
-      serviceAccountName: pa-operator
+      serviceAccountName: pa-controller
       containers:
-      - name: operator
-        image: inwinstack/pa-operator:v0.4.1
+      - name: pa-controller
+        image: inwinstack/pa-controller:v0.4.1
         args:
         - --logtostderr=true
         - --v=2

@@ -16,7 +16,7 @@
 
 set -e
 
-REPO_PATH="github.com/inwinstack/pa-operator"
+REPO_PATH="github.com/inwinstack/pa-controller"
 
 if [[ -f $(which python 2>&1) ]]; then
 	PYTHON="python"

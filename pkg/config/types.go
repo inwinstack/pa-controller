@@ -17,7 +17,7 @@ limitations under the License.
 package config
 
 import (
-	"github.com/inwinstack/pa-operator/pkg/pautil"
+	"github.com/inwinstack/pa-controller/pkg/pautil"
 )
 
 type OperatorConfig struct {

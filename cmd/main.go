@@ -6,10 +6,10 @@ import (
 	"os"
 
 	"github.com/golang/glog"
-	"github.com/inwinstack/pa-operator/pkg/config"
-	"github.com/inwinstack/pa-operator/pkg/operator"
-	"github.com/inwinstack/pa-operator/pkg/pautil"
-	"github.com/inwinstack/pa-operator/pkg/version"
+	"github.com/inwinstack/pa-controller/pkg/config"
+	"github.com/inwinstack/pa-controller/pkg/operator"
+	"github.com/inwinstack/pa-controller/pkg/pautil"
+	"github.com/inwinstack/pa-controller/pkg/version"
 	flag "github.com/spf13/pflag"
 )
 
@@ -45,7 +45,7 @@ func main() {
 	defer glog.Flush()
 	parserFlags()
 
-	glog.Infof("Starting PA operator...")
+	glog.Infof("Starting PA controller...")
 
 	if ver {
 		fmt.Fprintf(os.Stdout, "%s\n", version.GetVersion())
