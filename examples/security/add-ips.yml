@@ -1,0 +1,30 @@
+apiVersion: inwinstack.com/v1
+kind: Security
+metadata:
+  name: add-ips
+spec:
+  sourceZones:
+  - untrust
+  sourceAddresses:
+  - any
+  sourceUsers:
+  - any
+  hipProfiles:
+  - any
+  destinationZones:
+  - AI public service network
+  destinationAddresses:
+  - 140.23.110.10
+  applications:
+  - any
+  categories:
+  - any
+  services:
+  - k8s-tcp80
+  action: allow
+  logEnd: true
+  logSetting: siem_forward
+  group: inwin-monitor
+  icmpUnreachable: false
+  disableServerResponseInspection: false
+  description: "Kubernetes security custom resource"
