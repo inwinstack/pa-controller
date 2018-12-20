@@ -53,6 +53,9 @@ func newSecurity(name, srcAddr, service string, svc *v1.Service) *inwinv1.Securi
 			Action:                          "allow",
 			IcmpUnreachable:                 false,
 			DisableServerResponseInspection: false,
+			LogEnd:                          true,
+			LogSetting:                      "siem_forward",
+			Group:                           "inwin-monitor",
 		},
 	}
 }
