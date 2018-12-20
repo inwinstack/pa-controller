@@ -17,8 +17,6 @@ limitations under the License.
 package k8sutil
 
 import (
-	"github.com/inwinstack/pa-controller/pkg/constants"
-	"k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -37,31 +35,4 @@ func GetRestConfig(kubeconfig string) (*rest.Config, error) {
 		return nil, err
 	}
 	return cfg, nil
-}
-
-func FilterServices(svcs *v1.ServiceList, addr string) {
-	var items []v1.Service
-	for _, svc := range svcs.Items {
-		v := svc.Annotations[constants.AnnKeyPublicIP]
-		if v == addr {
-			items = append(items, svc)
-		}
-	}
-	svcs.Items = items
-}
-
-func MarkChangePorts(old *v1.Service, new *v1.Service) map[v1.ServicePort]bool {
-	ports := map[v1.ServicePort]bool{}
-	if old != nil {
-		oldSpec := old.Spec.DeepCopy()
-		for _, o := range oldSpec.Ports {
-			ports[o] = false
-		}
-	}
-
-	newSpec := new.Spec.DeepCopy()
-	for _, n := range newSpec.Ports {
-		ports[n] = true
-	}
-	return ports
 }

@@ -22,7 +22,6 @@ import (
 
 type OperatorConfig struct {
 	Kubeconfig       string
-	IgnoreNamespaces []string
 	Retry            int
 	CommitWaitTime   int
 	MoveType         int

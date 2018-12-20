@@ -28,11 +28,10 @@ import (
 	opkit "github.com/inwinstack/operator-kit"
 	"github.com/inwinstack/pa-controller/pkg/config"
 	"github.com/inwinstack/pa-controller/pkg/k8sutil"
-	"github.com/inwinstack/pa-controller/pkg/operator/nat"
-	"github.com/inwinstack/pa-controller/pkg/operator/security"
-	"github.com/inwinstack/pa-controller/pkg/operator/service"
+	"github.com/inwinstack/pa-controller/pkg/operator/pa"
+	"github.com/inwinstack/pa-controller/pkg/operator/pa/nat"
+	"github.com/inwinstack/pa-controller/pkg/operator/pa/security"
 	"github.com/inwinstack/pa-controller/pkg/pautil"
-	"github.com/inwinstack/pa-controller/pkg/util"
 	"k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
@@ -48,22 +47,14 @@ type Operator struct {
 	ctx       *opkit.Context
 	conf      *config.OperatorConfig
 	resources []opkit.CustomResource
-
-	// Resource controllers
-	service  *service.ServiceController
-	security *security.SecurityController
-	nat      *nat.NATController
-
-	// PA
-	paclient *pautil.PaloAlto
-	commit   chan int
+	paclient  *pautil.PaloAlto
+	pa        *pa.PAController
 }
 
 func NewMainOperator(conf *config.OperatorConfig) *Operator {
 	return &Operator{
 		resources: []opkit.CustomResource{nat.Resource, security.Resource},
 		conf:      conf,
-		commit:    make(chan int, 1),
 	}
 }
 
@@ -76,16 +67,13 @@ func (o *Operator) Initialize() error {
 	}
 	o.showPaloAltoInfos(paclient)
 
-	ctx, inwinclient, err := o.initContextAndClient()
+	ctx, client, err := o.initContextAndClient()
 	if err != nil {
 		return err
 	}
 
-	o.service = service.NewController(ctx, inwinclient, paclient, o.conf, o.commit)
-	o.security = security.NewController(ctx, inwinclient, paclient, o.conf, o.commit)
-	o.nat = nat.NewController(ctx, inwinclient, paclient, o.conf, o.commit)
+	o.pa = pa.NewController(ctx, client, paclient, o.conf)
 	o.ctx = ctx
-	o.paclient = paclient
 	return nil
 }
 
@@ -143,34 +131,6 @@ func (o *Operator) initResources() error {
 	return nil
 }
 
-func (o *Operator) handleCommitJob() {
-	for {
-		select {
-		case <-o.commit:
-			run := waitNextCommitJob(o.commit, time.Second*time.Duration(o.conf.CommitWaitTime))
-			if run {
-				glog.V(3).Infoln("Received commit job signal...")
-				util.Retry(o.paclient.Commit, time.Second*1, o.conf.Retry)
-			}
-		}
-	}
-}
-
-func waitNextCommitJob(commit chan int, t time.Duration) bool {
-	ch := make(chan struct{})
-	go func() {
-		<-commit
-		close(ch)
-	}()
-
-	select {
-	case <-ch:
-		return waitNextCommitJob(commit, t)
-	case <-time.After(t):
-		return true
-	}
-}
-
 func (o *Operator) Run() error {
 	for {
 		err := o.initResources()
@@ -186,12 +146,7 @@ func (o *Operator) Run() error {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// start watching the resources
-	o.service.StartWatch(v1.NamespaceAll, stopChan)
-	o.nat.StartWatch(v1.NamespaceAll, stopChan)
-	o.security.StartWatch(v1.NamespaceAll, stopChan)
-
-	// start receiving the commit job
-	go o.handleCommitJob()
+	o.pa.StartWatch(v1.NamespaceAll, stopChan)
 
 	for {
 		select {

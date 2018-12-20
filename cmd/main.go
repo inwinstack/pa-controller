@@ -18,7 +18,6 @@ var (
 	host             string
 	username         string
 	password         string
-	namespaces       []string
 	retry            int
 	commitTime       int
 	moveType         int
@@ -31,7 +30,6 @@ func parserFlags() {
 	flag.StringVarP(&host, "pa-host", "", "", "Palo Alto API host address.")
 	flag.StringVarP(&username, "pa-username", "", "", "Palo Alto API username.")
 	flag.StringVarP(&password, "pa-password", "", "", "Palo Alto API password.")
-	flag.StringSliceVarP(&namespaces, "ignore-namespaces", "", nil, "Set ignore namespaces for Kubernetes service.")
 	flag.IntVarP(&retry, "retry", "", 5, "Number of retry for PA failed job.")
 	flag.IntVarP(&commitTime, "commit-wait-time", "", 2, "The length of time to wait next PA commit.")
 	flag.IntVarP(&moveType, "move-type", "", 5, "The param should be one of the Move constants(0:Skip, 1:Before, 2:DirectlyBefore, 3:After, 4:DirectlyAfter, 5:Top and 6:Bottom).")
@@ -58,7 +56,6 @@ func main() {
 
 	conf := &config.OperatorConfig{
 		Kubeconfig:       kubeconfig,
-		IgnoreNamespaces: namespaces,
 		Retry:            retry,
 		CommitWaitTime:   commitTime,
 		MoveType:         moveType,
