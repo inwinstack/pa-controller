@@ -23,7 +23,6 @@ spec:
         args:
         - --logtostderr=true
         - --v=2
-        - --ignore-namespaces=kube-system,default,kube-public
         - --pa-host=172.22.132.114
         - --pa-username=admin
         - --pa-password=admin
