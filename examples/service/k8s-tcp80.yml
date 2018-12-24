@@ -1,0 +1,9 @@
+apiVersion: inwinstack.com/v1
+kind: Service
+metadata:
+  name: k8s-tcp80
+spec:
+  protocol: tcp
+  sourcePort: ""
+  destinationPort: "80"
+  description: "Kubernetes Service custom resource"

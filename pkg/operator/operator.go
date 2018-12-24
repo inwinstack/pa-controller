@@ -31,6 +31,7 @@ import (
 	"github.com/inwinstack/pa-controller/pkg/operator/pa"
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/nat"
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/security"
+	"github.com/inwinstack/pa-controller/pkg/operator/pa/service"
 	"github.com/inwinstack/pa-controller/pkg/pautil"
 	"k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -53,7 +54,7 @@ type Operator struct {
 
 func NewMainOperator(conf *config.OperatorConfig) *Operator {
 	return &Operator{
-		resources: []opkit.CustomResource{nat.Resource, security.Resource},
+		resources: []opkit.CustomResource{nat.Resource, security.Resource, service.Resource},
 		conf:      conf,
 	}
 }

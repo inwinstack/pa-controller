@@ -158,7 +158,7 @@
   version = "v0.3.6"
 
 [[projects]]
-  digest = "1:32f109723bdb383ee861f3b2a02e32c62a06e3c5b7b2c7bee50f231a6514e5f4"
+  digest = "1:798bcddde4b0be7ea2319a245676afeaef12d2a284a87cf6f0182435087e32a7"
   name = "github.com/inwinstack/blended"
   packages = [
     "apis/inwinstack",
@@ -167,8 +167,8 @@
     "client/clientset/versioned/typed/inwinstack/v1",
   ]
   pruneopts = "UT"
-  revision = "a62b0ab584232d038b7ce9c89ef9d49a6d53ad56"
-  version = "v0.4.1"
+  revision = "a6d78ef96e20104384f1bd5b58410cb8f5508a57"
+  version = "v0.5.0"
 
 [[projects]]
   branch = "v1.11.0"
@@ -261,18 +261,18 @@
     "idna",
   ]
   pruneopts = "UT"
-  revision = "e147a9138326bc0e9d4e179541ffd8af41cff8a9"
+  revision = "927f97764cc334a6575f4b7a1584a147864d5723"
 
 [[projects]]
   branch = "master"
-  digest = "1:ba8cbf57cfd92d5f8592b4aca1a35d92c162363d32aeabd5b12555f8896635e7"
+  digest = "1:3d5e79e10549fd9119cbefd614b6d351ef5bd0be2f2b103a4199788e784cbc68"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "074acd46bca67915925527c07849494d115e7c43"
+  revision = "b4a75ba826a64a70990f11a225237acd6ef35c9f"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"

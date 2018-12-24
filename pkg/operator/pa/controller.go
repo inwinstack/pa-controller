@@ -22,6 +22,7 @@ import (
 	"github.com/inwinstack/pa-controller/pkg/config"
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/nat"
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/security"
+	"github.com/inwinstack/pa-controller/pkg/operator/pa/service"
 	"github.com/inwinstack/pa-controller/pkg/pautil"
 	"github.com/inwinstack/pa-controller/pkg/util"
 	"k8s.io/api/core/v1"
@@ -34,6 +35,7 @@ type PAController struct {
 	paclient  *pautil.PaloAlto
 	commit    chan int
 
+	service  *service.ServiceController
 	security *security.SecurityController
 	nat      *nat.NATController
 }
@@ -51,6 +53,7 @@ func NewController(
 		commit:    make(chan int, 1),
 	}
 
+	c.service = service.NewController(ctx, clientset, paclient, conf, c.commit)
 	c.security = security.NewController(ctx, clientset, paclient, conf, c.commit)
 	c.nat = nat.NewController(ctx, clientset, paclient, conf, c.commit)
 	return c
@@ -59,6 +62,7 @@ func NewController(
 func (c *PAController) StartWatch(namespace string, stopCh chan struct{}) {
 	c.nat.StartWatch(v1.NamespaceAll, stopCh)
 	c.security.StartWatch(v1.NamespaceAll, stopCh)
+	c.service.StartWatch(v1.NamespaceAll, stopCh)
 	go c.handleCommitJob()
 }
 

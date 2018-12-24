@@ -17,6 +17,7 @@ limitations under the License.
 package pautil
 
 import (
+	"github.com/PaloAltoNetworks/pango/objs/srvc"
 	"github.com/PaloAltoNetworks/pango/poli/nat"
 	"github.com/PaloAltoNetworks/pango/poli/security"
 	inwinv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
@@ -95,5 +96,17 @@ func ToNatEntry(n *inwinv1.NAT) *nat.Entry {
 		Tags:                           n.Spec.Tags,
 	}
 	entry.Defaults()
+	return entry
+}
+
+func ToServiceEntry(svc *inwinv1.Service) *srvc.Entry {
+	entry := &srvc.Entry{
+		Name:            svc.Name,
+		Protocol:        svc.Spec.Protocol,
+		SourcePort:      svc.Spec.SourcePort,
+		DestinationPort: svc.Spec.DestinationPort,
+		Description:     svc.Spec.Description,
+		Tags:            svc.Spec.Tags,
+	}
 	return entry
 }
