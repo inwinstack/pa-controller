@@ -28,7 +28,6 @@ $ go run cmd/main.go \
     --pa-host=172.22.132.114 \
     --pa-username=admin \
     --pa-password=admin \
-    --ignore-namespaces=kube-system,default,kube-public
     -v=2
 ```
 
