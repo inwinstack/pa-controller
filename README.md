@@ -4,8 +4,10 @@ The PA controller will be sync Kubernetes CRDs to make it easy to set the PA pol
 
 Once installed, the PA controller provides the following custom resources:
 
-NAT: NAT rules provide address translation, and are different from security policy rules, which allow or deny packets.
-Security: Security policy protects network assets from threats and disruptions and aids in optimally allocating network resources for enhancing productivity and efficiency in business processes.
+* **NAT**: NAT rules provide address translation, and are different from security policy rules, which allow or deny packets.
+* **Security**: Security policy protects network assets from threats and disruptions and aids in optimally allocating network resources for enhancing productivity and efficiency in business processes.
+* **Service**: When you define policies for specific applications, you can select one or more services to limit the port numbers the applications can use. 
+
 ![](images/architecture.png)
 
 ## Building from Source

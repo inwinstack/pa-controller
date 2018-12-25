@@ -17,8 +17,6 @@ limitations under the License.
 package pautil
 
 import (
-	"fmt"
-
 	"github.com/PaloAltoNetworks/pango/objs"
 	"github.com/PaloAltoNetworks/pango/objs/srvc"
 )
@@ -26,7 +24,7 @@ import (
 type Service interface {
 	List() ([]string, error)
 	Get(string) (*srvc.Entry, error)
-	Set(string, int32) error
+	Set(*srvc.Entry) error
 	Delete(string) error
 }
 
@@ -52,15 +50,8 @@ func (op *ServiceOp) Get(name string) (*srvc.Entry, error) {
 	return &svc, nil
 }
 
-func (op *ServiceOp) Set(protocol string, port int32) error {
-	svc := srvc.Entry{
-		Name:            fmt.Sprintf("k8s-%s%d", protocol, port),
-		Description:     "Auto generate service for Kubernetes",
-		Protocol:        protocol,
-		SourcePort:      "",
-		DestinationPort: fmt.Sprintf("%d", port),
-	}
-	return op.objs.Services.Edit("", svc)
+func (op *ServiceOp) Set(entry *srvc.Entry) error {
+	return op.objs.Services.Edit("", *entry)
 }
 
 func (op *ServiceOp) Delete(name string) error {

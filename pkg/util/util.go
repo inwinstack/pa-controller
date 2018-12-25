@@ -17,8 +17,6 @@ limitations under the License.
 package util
 
 import (
-	"net"
-	"strconv"
 	"time"
 
 	"github.com/golang/glog"
@@ -40,16 +38,4 @@ func Retry(callback func() error, d time.Duration, attempts int) (err error) {
 		time.Sleep(d)
 	}
 	return err
-}
-
-func ParseIP(s string) net.IP {
-	return net.ParseIP(s)
-}
-
-func ParseBool(s string) bool {
-	ok, err := strconv.ParseBool(s)
-	if err != nil {
-		return false
-	}
-	return ok
 }
