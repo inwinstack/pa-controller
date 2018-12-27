@@ -19,4 +19,6 @@ package constants
 const (
 	// AnnKeyPolicyRetry set in NAT and Security to retry failed resource
 	AnnKeyPolicyRetry = "inwinstack.com/policy-retry"
+	// AnnKeyServiceRefresh set in Service to refresh the annotations
+	AnnKeyServiceRefresh = "inwinstack.com/service-refresh"
 )
