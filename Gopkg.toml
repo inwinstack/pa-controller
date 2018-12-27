@@ -21,7 +21,7 @@
 
 [[constraint]]
   name = "github.com/inwinstack/blended"
-  version = "v0.5.1"
+  branch = "cluster-scope"
 
 [prune]
   go-tests = true

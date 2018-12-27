@@ -30,11 +30,11 @@ test:
 
 .PHONY: build_image
 build_image:
-	docker build -t $(OWNER)/pa-controller:$(VERSION) .
+	docker build -t $(OWNER)/pa-controller-global:$(VERSION) .
 
 .PHONY: push_image
 push_image:
-	docker push $(OWNER)/pa-controller:$(VERSION)
+	docker push $(OWNER)/pa-controller-global:$(VERSION)
 
 .PHONY: clean
 clean:
