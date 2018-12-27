@@ -83,7 +83,7 @@ func (c *ServiceController) StartWatch(namespace string, stopCh chan struct{}) e
 
 func (c *ServiceController) onAdd(obj interface{}) {
 	svc := obj.(*inwinv1.Service).DeepCopy()
-	glog.V(2).Infof("Received add on Service %s.", svc.Name, svc.Namespace)
+	glog.V(2).Infof("Received add on Service %s.", svc.Name)
 
 	if svc.Status.Phase == "" {
 		svc.Status.Phase = inwinv1.ServicePending
@@ -91,7 +91,7 @@ func (c *ServiceController) onAdd(obj interface{}) {
 
 	if svc.Status.Phase == inwinv1.ServicePending {
 		if err := c.setAndUpdateObject(svc); err != nil {
-			glog.Errorf("Failed to set object on Service %s: %+v.", svc.Name, svc.Namespace, err)
+			glog.Errorf("Failed to set object on Service %s: %+v.", svc.Name, err)
 		}
 	}
 }
@@ -99,22 +99,22 @@ func (c *ServiceController) onAdd(obj interface{}) {
 func (c *ServiceController) onUpdate(oldObj, newObj interface{}) {
 	old := oldObj.(*inwinv1.Service).DeepCopy()
 	svc := newObj.(*inwinv1.Service).DeepCopy()
-	glog.V(2).Infof("Received update on Service %s.", svc.Name, svc.Namespace)
+	glog.V(2).Infof("Received update on Service %s.", svc.Name)
 
 	_, needCommit := svc.Annotations[constants.AnnKeyServiceRefresh]
 	if !reflect.DeepEqual(old.Spec, svc.Spec) || needCommit || svc.Status.Phase == inwinv1.ServicePending {
 		if err := c.setAndUpdateObject(svc); err != nil {
-			glog.Errorf("Failed to update object on Service %s: %+v.", svc.Name, svc.Namespace, err)
+			glog.Errorf("Failed to update object on Service %s: %+v.", svc.Name, err)
 		}
 	}
 }
 
 func (c *ServiceController) onDelete(obj interface{}) {
 	svc := obj.(*inwinv1.Service).DeepCopy()
-	glog.V(2).Infof("Received delete on Service %s.", svc.Name, svc.Namespace)
+	glog.V(2).Infof("Received delete on Service %s.", svc.Name)
 
 	if err := c.deleteObject(svc); err != nil {
-		glog.Errorf("Failed to delete object on Service %s: %+v.", svc.Name, svc.Namespace, err)
+		glog.Errorf("Failed to delete object on Service %s: %+v.", svc.Name, err)
 	}
 }
 
