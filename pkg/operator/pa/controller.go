@@ -60,10 +60,10 @@ func NewController(
 }
 
 func (c *PAController) StartWatch(namespace string, stopCh chan struct{}) {
+	go c.handleCommitJob()
 	c.nat.StartWatch(v1.NamespaceAll, stopCh)
 	c.security.StartWatch(v1.NamespaceAll, stopCh)
 	c.service.StartWatch(v1.NamespaceAll, stopCh)
-	go c.handleCommitJob()
 }
 
 func (c *PAController) handleCommitJob() {

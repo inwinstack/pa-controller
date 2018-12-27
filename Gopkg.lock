@@ -158,7 +158,7 @@
   version = "v0.3.6"
 
 [[projects]]
-  digest = "1:798bcddde4b0be7ea2319a245676afeaef12d2a284a87cf6f0182435087e32a7"
+  digest = "1:060c922e0a9ec00e9b0c72311832d305f899f45dd3001bab013d1b6731fb1cc3"
   name = "github.com/inwinstack/blended"
   packages = [
     "apis/inwinstack",
@@ -167,8 +167,8 @@
     "client/clientset/versioned/typed/inwinstack/v1",
   ]
   pruneopts = "UT"
-  revision = "a6d78ef96e20104384f1bd5b58410cb8f5508a57"
-  version = "v0.5.0"
+  revision = "37f6f9b6079634f0944c8a5cf67b36cbaf1f2e47"
+  version = "v0.5.1"
 
 [[projects]]
   branch = "v1.11.0"
