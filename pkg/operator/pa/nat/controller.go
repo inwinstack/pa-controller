@@ -49,7 +49,7 @@ type NATController struct {
 	clientset inwinclientset.InwinstackV1Interface
 	conf      *config.OperatorConfig
 	paclient  *pautil.PaloAlto
-	commit    chan int
+	commit    chan bool
 }
 
 func NewController(
@@ -57,7 +57,7 @@ func NewController(
 	clientset inwinclientset.InwinstackV1Interface,
 	paclient *pautil.PaloAlto,
 	conf *config.OperatorConfig,
-	commit chan int) *NATController {
+	commit chan bool) *NATController {
 	return &NATController{
 		ctx:       ctx,
 		clientset: clientset,
@@ -152,8 +152,8 @@ func (c *NATController) setAndUpdatePolicy(n *inwinv1.NAT) error {
 		return err
 	}
 
-	// commit change to PA
-	c.commit <- 1
+	// commit the changes to PA
+	c.commit <- true
 
 	n.Status.Phase = inwinv1.NATActive
 	n.Status.LastUpdateTime = metav1.NewTime(time.Now())
@@ -169,8 +169,8 @@ func (c *NATController) deletePolicy(n *inwinv1.NAT) error {
 			return err
 		}
 
-		// commit change to PA
-		c.commit <- 1
+		// commit the changes to PA
+		c.commit <- true
 	}
 	return nil
 }

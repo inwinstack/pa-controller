@@ -33,7 +33,7 @@ type PAController struct {
 	clientset inwinclientset.InwinstackV1Interface
 	conf      *config.OperatorConfig
 	paclient  *pautil.PaloAlto
-	commit    chan int
+	commit    chan bool
 
 	service  *service.ServiceController
 	security *security.SecurityController
@@ -50,7 +50,7 @@ func NewController(
 		clientset: clientset,
 		paclient:  paclient,
 		conf:      conf,
-		commit:    make(chan int, 1),
+		commit:    make(chan bool),
 	}
 
 	c.service = service.NewController(ctx, clientset, paclient, conf, c.commit)
@@ -60,36 +60,39 @@ func NewController(
 }
 
 func (c *PAController) StartWatch(namespace string, stopCh chan struct{}) {
-	go c.handleCommitJob()
 	c.nat.StartWatch(v1.NamespaceAll, stopCh)
 	c.security.StartWatch(v1.NamespaceAll, stopCh)
 	c.service.StartWatch(v1.NamespaceAll, stopCh)
+	go c.handleCommitJob()
 }
 
 func (c *PAController) handleCommitJob() {
 	for {
 		select {
-		case <-c.commit:
-			run := c.waitNextCommitJob(c.commit, time.Second*time.Duration(c.conf.CommitWaitTime))
-			if run {
-				glog.V(3).Infoln("Received commit job signal...")
-				util.Retry(c.paclient.Commit, time.Second*1, c.conf.Retry)
+		case ok := <-c.commit:
+			if ok {
+				run := c.waitNextCommitJob(time.Second * time.Duration(c.conf.CommitWaitTime))
+				if run {
+					glog.V(3).Infoln("Received commit job signal...")
+					util.Retry(c.paclient.Commit, time.Second*1, c.conf.Retry)
+				}
 			}
 		}
 	}
 }
 
-func (c *PAController) waitNextCommitJob(commit chan int, t time.Duration) bool {
+func (c *PAController) waitNextCommitJob(t time.Duration) bool {
 	ch := make(chan struct{})
 	go func() {
-		<-commit
+		<-c.commit
 		close(ch)
 	}()
 
 	select {
 	case <-ch:
-		return c.waitNextCommitJob(commit, t)
+		return c.waitNextCommitJob(t)
 	case <-time.After(t):
+		c.commit <- false
 		return true
 	}
 }

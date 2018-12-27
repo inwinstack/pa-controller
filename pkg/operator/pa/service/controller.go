@@ -50,7 +50,7 @@ type ServiceController struct {
 	clientset inwinclientset.InwinstackV1Interface
 	conf      *config.OperatorConfig
 	paclient  *pautil.PaloAlto
-	commit    chan int
+	commit    chan bool
 }
 
 func NewController(
@@ -58,7 +58,7 @@ func NewController(
 	clientset inwinclientset.InwinstackV1Interface,
 	paclient *pautil.PaloAlto,
 	conf *config.OperatorConfig,
-	commit chan int) *ServiceController {
+	commit chan bool) *ServiceController {
 	return &ServiceController{
 		ctx:       ctx,
 		clientset: clientset,
@@ -161,8 +161,8 @@ func (c *ServiceController) setAndUpdateObject(svc *inwinv1.Service) error {
 		return err
 	}
 
-	// commit change to PA
-	c.commit <- 1
+	// commit the changes to PA
+	c.commit <- true
 
 	svc.Status.Phase = inwinv1.ServiceActive
 	svc.Status.LastUpdateTime = metav1.NewTime(time.Now())
@@ -179,8 +179,8 @@ func (c *ServiceController) deleteObject(svc *inwinv1.Service) error {
 			return err
 		}
 
-		// commit change to PA
-		c.commit <- 1
+		// commit the changes to PA
+		c.commit <- true
 	}
 	return nil
 }

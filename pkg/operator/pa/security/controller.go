@@ -50,7 +50,7 @@ type SecurityController struct {
 	clientset inwinclientset.InwinstackV1Interface
 	conf      *config.OperatorConfig
 	paclient  *pautil.PaloAlto
-	commit    chan int
+	commit    chan bool
 }
 
 func NewController(
@@ -58,7 +58,7 @@ func NewController(
 	clientset inwinclientset.InwinstackV1Interface,
 	paclient *pautil.PaloAlto,
 	conf *config.OperatorConfig,
-	commit chan int) *SecurityController {
+	commit chan bool) *SecurityController {
 	return &SecurityController{
 		ctx:       ctx,
 		clientset: clientset,
@@ -167,8 +167,8 @@ func (c *SecurityController) setAndUpdatePolicy(sec *inwinv1.Security) error {
 		return err
 	}
 
-	// commit change to PA
-	c.commit <- 1
+	// commit the changes to PA
+	c.commit <- true
 
 	sec.Status.Phase = inwinv1.SecurityActive
 	sec.Status.LastUpdateTime = metav1.NewTime(time.Now())
@@ -184,8 +184,8 @@ func (c *SecurityController) deletePolicy(sec *inwinv1.Security) error {
 			return err
 		}
 
-		// commit change to PA
-		c.commit <- 1
+		// commit the changes to PA
+		c.commit <- true
 	}
 	return nil
 }
