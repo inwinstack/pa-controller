@@ -1,6 +1,6 @@
 VERSION_MAJOR ?= 0
 VERSION_MINOR ?= 5
-VERSION_BUILD ?= 2
+VERSION_BUILD ?= 3
 VERSION ?= v$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_BUILD)
 
 GOOS ?= $(shell go env GOOS)
@@ -30,11 +30,11 @@ test:
 
 .PHONY: build_image
 build_image:
-	docker build -t $(OWNER)/pa-controller-global:$(VERSION) .
+	docker build -t $(OWNER)/pa-controller:$(VERSION) .
 
 .PHONY: push_image
 push_image:
-	docker push $(OWNER)/pa-controller-global:$(VERSION)
+	docker push $(OWNER)/pa-controller:$(VERSION)
 
 .PHONY: clean
 clean:
