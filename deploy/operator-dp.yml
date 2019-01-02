@@ -19,7 +19,7 @@ spec:
       serviceAccountName: pa-controller
       containers:
       - name: pa-controller
-        image: inwinstack/pa-controller:v0.5.2
+        image: inwinstack/pa-controller:v0.5.3
         args:
         - --logtostderr=true
         - --v=2
