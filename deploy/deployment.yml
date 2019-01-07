@@ -13,7 +13,10 @@ spec:
       labels:
         app: pa-controller
     spec:
+      priorityClassName: system-cluster-critical
       tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
       - effect: NoSchedule
         key: node-role.kubernetes.io/master
       serviceAccountName: pa-controller
