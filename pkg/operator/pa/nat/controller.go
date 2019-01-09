@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/glog"
 	inwinv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
-	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
+	clientset "github.com/inwinstack/blended/client/clientset/versioned"
 	opkit "github.com/inwinstack/operator-kit"
 	"github.com/inwinstack/pa-controller/pkg/config"
 	"github.com/inwinstack/pa-controller/pkg/constants"
@@ -28,6 +28,8 @@ import (
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
+
+	"github.com/PaloAltoNetworks/pango/poli/nat"
 )
 
 const (
@@ -46,22 +48,22 @@ var Resource = opkit.CustomResource{
 
 type NATController struct {
 	ctx       *opkit.Context
-	clientset inwinclientset.InwinstackV1Interface
+	clientset clientset.Interface
 	conf      *config.OperatorConfig
-	paclient  *pautil.PaloAlto
+	nat       *nat.FwNat
 	commit    chan bool
 }
 
 func NewController(
 	ctx *opkit.Context,
-	clientset inwinclientset.InwinstackV1Interface,
-	paclient *pautil.PaloAlto,
+	clientset clientset.Interface,
+	nat *nat.FwNat,
 	conf *config.OperatorConfig,
 	commit chan bool) *NATController {
 	return &NATController{
 		ctx:       ctx,
 		clientset: clientset,
-		paclient:  paclient,
+		nat:       nat,
 		conf:      conf,
 		commit:    commit,
 	}
@@ -75,7 +77,7 @@ func (c *NATController) StartWatch(namespace string, stopCh chan struct{}) error
 	}
 
 	glog.Infof("Start watching nat resources.")
-	watcher := opkit.NewWatcher(Resource, namespace, resourceHandlerFuncs, c.clientset.RESTClient())
+	watcher := opkit.NewWatcher(Resource, namespace, resourceHandlerFuncs, c.clientset.InwinstackV1().RESTClient())
 	go watcher.Watch(&inwinv1.NAT{}, stopCh)
 	return nil
 }
@@ -133,7 +135,7 @@ func (c *NATController) setRetry(n *inwinv1.NAT, retry int) {
 
 func (c *NATController) setAndUpdatePolicy(n *inwinv1.NAT) error {
 	entry := pautil.ToNatEntry(n)
-	if err := c.paclient.NAT.Set(entry); err != nil {
+	if err := c.nat.Edit(c.conf.Vsys, *entry); err != nil {
 		retry := c.getRetry(n)
 		switch {
 		case retry < c.conf.Retry:
@@ -146,7 +148,7 @@ func (c *NATController) setAndUpdatePolicy(n *inwinv1.NAT) error {
 
 		n.Status.Reason = err.Error()
 		n.Status.LastUpdateTime = metav1.NewTime(time.Now())
-		if _, serr := c.clientset.NATs(n.Namespace).Update(n); serr != nil {
+		if _, serr := c.clientset.InwinstackV1().NATs(n.Namespace).Update(n); serr != nil {
 			return serr
 		}
 		return err
@@ -157,7 +159,7 @@ func (c *NATController) setAndUpdatePolicy(n *inwinv1.NAT) error {
 
 	n.Status.Phase = inwinv1.NATActive
 	n.Status.LastUpdateTime = metav1.NewTime(time.Now())
-	if _, err := c.clientset.NATs(n.Namespace).Update(n); err != nil {
+	if _, err := c.clientset.InwinstackV1().NATs(n.Namespace).Update(n); err != nil {
 		return err
 	}
 	return nil
@@ -165,7 +167,7 @@ func (c *NATController) setAndUpdatePolicy(n *inwinv1.NAT) error {
 
 func (c *NATController) deletePolicy(n *inwinv1.NAT) error {
 	if n.Status.Phase == inwinv1.NATActive {
-		if err := c.paclient.NAT.Delete(n.Name); err != nil {
+		if err := c.nat.Delete(c.conf.Vsys, n.Name); err != nil {
 			return err
 		}
 

@@ -163,11 +163,12 @@
   version = "v0.3.6"
 
 [[projects]]
-  digest = "1:798bcddde4b0be7ea2319a245676afeaef12d2a284a87cf6f0182435087e32a7"
+  digest = "1:54ab89512689b6c072dceb0a0d0fd7cc6caad4dff2a399686c7cee6942aaa1d4"
   name = "github.com/inwinstack/blended"
   packages = [
     "apis/inwinstack",
     "apis/inwinstack/v1",
+    "client/clientset/versioned",
     "client/clientset/versioned/scheme",
     "client/clientset/versioned/typed/inwinstack/v1",
   ]
@@ -502,6 +503,7 @@
     "github.com/PaloAltoNetworks/pango/poli/security",
     "github.com/golang/glog",
     "github.com/inwinstack/blended/apis/inwinstack/v1",
+    "github.com/inwinstack/blended/client/clientset/versioned",
     "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1",
     "github.com/inwinstack/operator-kit",
     "github.com/spf13/pflag",

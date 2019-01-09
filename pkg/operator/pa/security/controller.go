@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/glog"
 	inwinv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
-	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
+	clientset "github.com/inwinstack/blended/client/clientset/versioned"
 	opkit "github.com/inwinstack/operator-kit"
 	"github.com/inwinstack/pa-controller/pkg/config"
 	"github.com/inwinstack/pa-controller/pkg/constants"
@@ -28,6 +28,8 @@ import (
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
+
+	"github.com/PaloAltoNetworks/pango/poli/security"
 )
 
 const (
@@ -47,22 +49,22 @@ var Resource = opkit.CustomResource{
 
 type SecurityController struct {
 	ctx       *opkit.Context
-	clientset inwinclientset.InwinstackV1Interface
+	clientset clientset.Interface
 	conf      *config.OperatorConfig
-	paclient  *pautil.PaloAlto
+	security  *security.FwSecurity
 	commit    chan bool
 }
 
 func NewController(
 	ctx *opkit.Context,
-	clientset inwinclientset.InwinstackV1Interface,
-	paclient *pautil.PaloAlto,
+	clientset clientset.Interface,
+	security *security.FwSecurity,
 	conf *config.OperatorConfig,
 	commit chan bool) *SecurityController {
 	return &SecurityController{
 		ctx:       ctx,
 		clientset: clientset,
-		paclient:  paclient,
+		security:  security,
 		conf:      conf,
 		commit:    commit,
 	}
@@ -76,7 +78,7 @@ func (c *SecurityController) StartWatch(namespace string, stopCh chan struct{}) 
 	}
 
 	glog.Infof("Start watching security resources.")
-	watcher := opkit.NewWatcher(Resource, namespace, resourceHandlerFuncs, c.clientset.RESTClient())
+	watcher := opkit.NewWatcher(Resource, namespace, resourceHandlerFuncs, c.clientset.InwinstackV1().RESTClient())
 	go watcher.Watch(&inwinv1.Security{}, stopCh)
 	return nil
 }
@@ -145,7 +147,7 @@ func (c *SecurityController) checkRetry(sec *inwinv1.Security, err error) error 
 
 	sec.Status.Reason = err.Error()
 	sec.Status.LastUpdateTime = metav1.NewTime(time.Now())
-	if _, serr := c.clientset.Securities(sec.Namespace).Update(sec); serr != nil {
+	if _, serr := c.clientset.InwinstackV1().Securities(sec.Namespace).Update(sec); serr != nil {
 		return serr
 	}
 	return nil
@@ -153,14 +155,14 @@ func (c *SecurityController) checkRetry(sec *inwinv1.Security, err error) error 
 
 func (c *SecurityController) setAndUpdatePolicy(sec *inwinv1.Security) error {
 	entry := pautil.ToSecurityEntry(sec)
-	if err := c.paclient.Security.Set(entry); err != nil {
+	if err := c.security.Edit(c.conf.Vsys, *entry); err != nil {
 		if serr := c.checkRetry(sec, err); serr != nil {
 			return serr
 		}
 		return err
 	}
 
-	if err := c.paclient.Security.Move(c.conf.MoveType, c.conf.MoveRelationRule, entry); err != nil {
+	if err := c.security.MoveGroup(c.conf.Vsys, c.conf.MoveType, c.conf.MoveRule, *entry); err != nil {
 		if serr := c.checkRetry(sec, err); serr != nil {
 			return serr
 		}
@@ -172,7 +174,7 @@ func (c *SecurityController) setAndUpdatePolicy(sec *inwinv1.Security) error {
 
 	sec.Status.Phase = inwinv1.SecurityActive
 	sec.Status.LastUpdateTime = metav1.NewTime(time.Now())
-	if _, err := c.clientset.Securities(sec.Namespace).Update(sec); err != nil {
+	if _, err := c.clientset.InwinstackV1().Securities(sec.Namespace).Update(sec); err != nil {
 		return err
 	}
 	return nil
@@ -180,7 +182,7 @@ func (c *SecurityController) setAndUpdatePolicy(sec *inwinv1.Security) error {
 
 func (c *SecurityController) deletePolicy(sec *inwinv1.Security) error {
 	if sec.Status.Phase == inwinv1.SecurityActive {
-		if err := c.paclient.Security.Delete(sec.Name); err != nil {
+		if err := c.security.Delete(c.conf.Vsys, sec.Name); err != nil {
 			return err
 		}
 
