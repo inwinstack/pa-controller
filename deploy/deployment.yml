@@ -22,12 +22,12 @@ spec:
       serviceAccountName: pa-controller
       containers:
       - name: pa-controller
-        image: inwinstack/pa-controller:v0.5.3
+        image: inwinstack/pa-controller:v0.6.0
         args:
         - --logtostderr=true
         - --v=2
-        - --pa-host=172.22.132.114
-        - --pa-username=admin
-        - --pa-password=admin
+        - --host=172.22.132.114
+        - --username=admin
+        - --password=admin
         - --commit-wait-time=2
         - --retry=5
