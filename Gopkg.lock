@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d835b96f95403287b73cbafde9567a6905fd8ad9ce0d84eb2c8f974247852565"
+  digest = "1:b47145800c01186a9c11eaf6824f722706ffca6d4c5d21c91fa61f79c27ca764"
   name = "github.com/PaloAltoNetworks/pango"
   packages = [
     ".",
@@ -48,6 +48,7 @@
     "poli",
     "poli/nat",
     "poli/security",
+    "testdata",
     "userid",
     "util",
     "version",
@@ -546,6 +547,7 @@
     "github.com/PaloAltoNetworks/pango/objs/srvc",
     "github.com/PaloAltoNetworks/pango/poli/nat",
     "github.com/PaloAltoNetworks/pango/poli/security",
+    "github.com/PaloAltoNetworks/pango/testdata",
     "github.com/golang/glog",
     "github.com/inwinstack/blended/apis/inwinstack/v1",
     "github.com/inwinstack/blended/client/clientset/versioned",
@@ -557,6 +559,7 @@
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
     "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset",
     "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake",
+    "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/fake",
