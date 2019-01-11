@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/inwinstack/pa-controller.svg?branch=master)](https://travis-ci.org/inwinstack/pa-controller) [![Docker Build Status](https://img.shields.io/docker/build/inwinstack/pa-controller.svg)](https://hub.docker.com/r/inwinstack/pa-controller/) [![codecov](https://codecov.io/gh/inwinstack/pa-controller/branch/master/graph/badge.svg)](https://codecov.io/gh/inwinstack/pa-controller) ![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)
+[![Build Status](https://travis-ci.org/inwinstack/pa-controller.svg?branch=master)](https://travis-ci.org/inwinstack/pa-controller) [![codecov](https://codecov.io/gh/inwinstack/pa-controller/branch/master/graph/badge.svg)](https://codecov.io/gh/inwinstack/pa-controller) [![Docker Pulls](https://img.shields.io/docker/pulls/inwinstack/pa-controller.svg)](https://hub.docker.com/r/inwinstack/pa-controller/) ![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)
 # PA Controller
 The PA controller will be sync Kubernetes CRDs to make it easy to set the PA policy.
 

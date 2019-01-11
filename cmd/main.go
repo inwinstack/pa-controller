@@ -1,12 +1,9 @@
 /*
 Copyright © 2018 inwinSTACK.inc
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
    http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,37 +16,32 @@ package main
 import (
 	goflag "flag"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/golang/glog"
 	"github.com/inwinstack/pa-controller/pkg/config"
 	"github.com/inwinstack/pa-controller/pkg/operator"
-	"github.com/inwinstack/pa-controller/pkg/pautil"
 	"github.com/inwinstack/pa-controller/pkg/version"
 	flag "github.com/spf13/pflag"
 )
 
 var (
-	kubeconfig       string
-	host             string
-	username         string
-	password         string
-	retry            int
-	commitTime       int
-	moveType         int
-	moveRelationRule string
-	ver              bool
+	conf = &config.OperatorConfig{}
+	ver  bool
 )
 
 func parserFlags() {
-	flag.StringVarP(&kubeconfig, "kubeconfig", "", "", "Absolute path to the kubeconfig file.")
-	flag.StringVarP(&host, "pa-host", "", "", "Palo Alto API host address.")
-	flag.StringVarP(&username, "pa-username", "", "", "Palo Alto API username.")
-	flag.StringVarP(&password, "pa-password", "", "", "Palo Alto API password.")
-	flag.IntVarP(&retry, "retry", "", 5, "Number of retry for PA failed job.")
-	flag.IntVarP(&commitTime, "commit-wait-time", "", 2, "The length of time to wait next PA commit.")
-	flag.IntVarP(&moveType, "move-type", "", 5, "The param should be one of the Move constants(0:Skip, 1:Before, 2:DirectlyBefore, 3:After, 4:DirectlyAfter, 5:Top and 6:Bottom).")
-	flag.StringVarP(&moveRelationRule, "move-relation-rule", "", "", "A logical group of security policies somewhere in relation to another security policy.")
+	flag.StringVarP(&conf.Kubeconfig, "kubeconfig", "", "", "Absolute path to the kubeconfig file.")
+	flag.StringVarP(&conf.Host, "host", "", "", "Palo Alto firewall API host address.")
+	flag.StringVarP(&conf.Username, "username", "", "", "Palo Alto firewall API username.")
+	flag.StringVarP(&conf.Password, "password", "", "", "Palo Alto firewall API password.")
+	flag.StringVarP(&conf.APIKey, "api-key", "", "", "Palo Alto firewall API key.")
+	flag.IntVarP(&conf.MoveType, "move-type", "", 5, "The param should be one of the Move constants(0:Skip, 1:Before, 2:DirectlyBefore, 3:After, 4:DirectlyAfter, 5:Top and 6:Bottom).")
+	flag.StringVarP(&conf.MoveRule, "move-rule", "", "", "A logical group of security policies somewhere in relation to another security policy.")
+	flag.StringVarP(&conf.Vsys, "vsys", "", "", "A virtual system (vsys) is an independent (virtual) firewall instance that you can separately manage within a physical firewall.")
+	flag.IntVarP(&conf.Retry, "retry", "", 5, "Number of retry for PA failed job.")
+	flag.IntVarP(&conf.CommitWaitTime, "commit-wait-time", "", 2, "The length of time to wait next PA commit.")
 	flag.BoolVarP(&ver, "version", "", false, "Display the version.")
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	flag.Parse()
@@ -58,6 +50,8 @@ func parserFlags() {
 func main() {
 	defer glog.Flush()
 	parserFlags()
+	log.SetPrefix("[PA Firewall] ")
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Ltime)
 
 	glog.Infof("Starting PA controller...")
 
@@ -66,21 +60,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	if moveType > 6 {
-		glog.Fatalf("Error paras: the value must less than or equal to 6.")
-	}
-
-	conf := &config.OperatorConfig{
-		Kubeconfig:       kubeconfig,
-		Retry:            retry,
-		CommitWaitTime:   commitTime,
-		MoveType:         moveType,
-		MoveRelationRule: moveRelationRule,
-		PaloAlto: &pautil.Flag{
-			Host:     host,
-			Username: username,
-			Password: password,
-		},
+	if conf.MoveType > 6 {
+		glog.Fatalf("Error flag: the value must less than or equal to 6.")
 	}
 
 	op := operator.NewMainOperator(conf)

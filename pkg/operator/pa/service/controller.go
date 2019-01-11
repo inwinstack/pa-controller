@@ -18,9 +18,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/PaloAltoNetworks/pango/objs/srvc"
 	"github.com/golang/glog"
 	inwinv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
-	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
+	clientset "github.com/inwinstack/blended/client/clientset/versioned"
 	opkit "github.com/inwinstack/operator-kit"
 	"github.com/inwinstack/pa-controller/pkg/config"
 	"github.com/inwinstack/pa-controller/pkg/constants"
@@ -46,23 +47,23 @@ var Resource = opkit.CustomResource{
 }
 
 type ServiceController struct {
-	ctx       *opkit.Context
-	clientset inwinclientset.InwinstackV1Interface
 	conf      *config.OperatorConfig
-	paclient  *pautil.PaloAlto
+	ctx       *opkit.Context
+	clientset clientset.Interface
+	srvc      *srvc.FwSrvc
 	commit    chan bool
 }
 
 func NewController(
 	ctx *opkit.Context,
-	clientset inwinclientset.InwinstackV1Interface,
-	paclient *pautil.PaloAlto,
+	clientset clientset.Interface,
+	srvc *srvc.FwSrvc,
 	conf *config.OperatorConfig,
 	commit chan bool) *ServiceController {
 	return &ServiceController{
 		ctx:       ctx,
 		clientset: clientset,
-		paclient:  paclient,
+		srvc:      srvc,
 		conf:      conf,
 		commit:    commit,
 	}
@@ -76,7 +77,7 @@ func (c *ServiceController) StartWatch(namespace string, stopCh chan struct{}) e
 	}
 
 	glog.Infof("Start watching service obj resources.")
-	watcher := opkit.NewWatcher(Resource, namespace, resourceHandlerFuncs, c.clientset.RESTClient())
+	watcher := opkit.NewWatcher(Resource, namespace, resourceHandlerFuncs, c.clientset.InwinstackV1().RESTClient())
 	go watcher.Watch(&inwinv1.Service{}, stopCh)
 	return nil
 }
@@ -146,7 +147,7 @@ func (c *ServiceController) checkRetry(svc *inwinv1.Service, err error) error {
 
 	svc.Status.Reason = err.Error()
 	svc.Status.LastUpdateTime = metav1.NewTime(time.Now())
-	if _, serr := c.clientset.Services().Update(svc); serr != nil {
+	if _, serr := c.clientset.InwinstackV1().Services().Update(svc); serr != nil {
 		return serr
 	}
 	return nil
@@ -154,7 +155,7 @@ func (c *ServiceController) checkRetry(svc *inwinv1.Service, err error) error {
 
 func (c *ServiceController) setAndUpdateObject(svc *inwinv1.Service) error {
 	entry := pautil.ToServiceEntry(svc)
-	if err := c.paclient.Service.Set(entry); err != nil {
+	if err := c.srvc.Edit(c.conf.Vsys, *entry); err != nil {
 		if serr := c.checkRetry(svc, err); serr != nil {
 			return serr
 		}
@@ -167,7 +168,7 @@ func (c *ServiceController) setAndUpdateObject(svc *inwinv1.Service) error {
 	svc.Status.Phase = inwinv1.ServiceActive
 	svc.Status.LastUpdateTime = metav1.NewTime(time.Now())
 	delete(svc.Annotations, constants.AnnKeyServiceRefresh)
-	if _, err := c.clientset.Services().Update(svc); err != nil {
+	if _, err := c.clientset.InwinstackV1().Services().Update(svc); err != nil {
 		return err
 	}
 	return nil
@@ -175,7 +176,7 @@ func (c *ServiceController) setAndUpdateObject(svc *inwinv1.Service) error {
 
 func (c *ServiceController) deleteObject(svc *inwinv1.Service) error {
 	if svc.Status.Phase == inwinv1.ServiceActive {
-		if err := c.paclient.Service.Delete(svc.Name); err != nil {
+		if err := c.srvc.Delete(c.conf.Vsys, svc.Name); err != nil {
 			return err
 		}
 

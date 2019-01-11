@@ -100,7 +100,7 @@ func ToNatEntry(n *inwinv1.NAT) *nat.Entry {
 }
 
 func ToServiceEntry(svc *inwinv1.Service) *srvc.Entry {
-	entry := &srvc.Entry{
+	return &srvc.Entry{
 		Name:            svc.Name,
 		Protocol:        svc.Spec.Protocol,
 		SourcePort:      svc.Spec.SourcePort,
@@ -108,5 +108,4 @@ func ToServiceEntry(svc *inwinv1.Service) *srvc.Entry {
 		Description:     svc.Spec.Description,
 		Tags:            svc.Spec.Tags,
 	}
-	return entry
 }

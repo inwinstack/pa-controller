@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	inwinclientset "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1"
+	clientset "github.com/inwinstack/blended/client/clientset/versioned"
 	opkit "github.com/inwinstack/operator-kit"
 	"github.com/inwinstack/pa-controller/pkg/config"
 	"github.com/inwinstack/pa-controller/pkg/k8sutil"
@@ -32,8 +32,8 @@ import (
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/nat"
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/security"
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/service"
-	"github.com/inwinstack/pa-controller/pkg/pautil"
 	"k8s.io/api/core/v1"
+
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 )
@@ -45,46 +45,37 @@ const (
 )
 
 type Operator struct {
-	ctx       *opkit.Context
-	conf      *config.OperatorConfig
-	resources []opkit.CustomResource
-	paclient  *pautil.PaloAlto
-	pa        *pa.PAController
+	ctx        *opkit.Context
+	conf       *config.OperatorConfig
+	resources  []opkit.CustomResource
+	controller *pa.Controller
 }
 
 func NewMainOperator(conf *config.OperatorConfig) *Operator {
 	return &Operator{
-		resources: []opkit.CustomResource{nat.Resource, security.Resource, service.Resource},
-		conf:      conf,
+		resources: []opkit.CustomResource{
+			nat.Resource,
+			security.Resource,
+			service.Resource,
+		},
+		conf: conf,
 	}
 }
 
 func (o *Operator) Initialize() error {
 	glog.V(2).Info("Initialize the operator resources.")
 
-	paclient, err := pautil.NewClient(o.conf.PaloAlto)
-	if err != nil {
-		return err
-	}
-	o.showPaloAltoInfos(paclient)
-
-	ctx, client, err := o.initContextAndClient()
+	ctx, blendedClient, err := o.initContextAndClient()
 	if err != nil {
 		return err
 	}
 
-	o.pa = pa.NewController(ctx, client, paclient, o.conf)
+	o.controller = pa.NewController(ctx, blendedClient, o.conf)
 	o.ctx = ctx
 	return nil
 }
 
-func (o *Operator) showPaloAltoInfos(paclient *pautil.PaloAlto) {
-	glog.V(2).Infof("PA version: %s.\n", paclient.GetVersion())
-	glog.V(2).Infof("PA hostname: %s.\n", paclient.GetHostname())
-	glog.V(2).Infof("PA username: %s.\n", paclient.GetUsername())
-}
-
-func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.InwinstackV1Interface, error) {
+func (o *Operator) initContextAndClient() (*opkit.Context, clientset.Interface, error) {
 	glog.V(2).Info("Initialize the operator context and client.")
 
 	config, err := k8sutil.GetRestConfig(o.conf.Kubeconfig)
@@ -97,23 +88,23 @@ func (o *Operator) initContextAndClient() (*opkit.Context, inwinclientset.Inwins
 		return nil, nil, fmt.Errorf("Failed to get Kubernetes client. %+v", err)
 	}
 
-	extensionsclient, err := apiextensionsclientset.NewForConfig(config)
+	extensionsClient, err := apiextensionsclientset.NewForConfig(config)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to create Kubernetes API extension clientset. %+v", err)
 	}
 
-	inwinclient, err := inwinclientset.NewForConfig(config)
+	blendedClient, err := clientset.NewForConfig(config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to create inwinstack clientset. %+v", err)
+		return nil, nil, fmt.Errorf("Failed to create blended clientset. %+v", err)
 	}
 
 	ctx := &opkit.Context{
 		Clientset:             client,
-		APIExtensionClientset: extensionsclient,
+		APIExtensionClientset: extensionsClient,
 		Interval:              interval,
 		Timeout:               timeout,
 	}
-	return ctx, inwinclient, nil
+	return ctx, blendedClient, nil
 }
 
 func (o *Operator) initResources() error {
@@ -146,8 +137,12 @@ func (o *Operator) Run() error {
 	stopChan := make(chan struct{})
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
+	if err := o.controller.Initialize(); err != nil {
+		return fmt.Errorf("Failed to init PA controller. %+v", err)
+	}
+
 	// start watching the resources
-	o.pa.StartWatch(v1.NamespaceAll, stopChan)
+	o.controller.StartWatch(v1.NamespaceAll, stopChan)
 
 	for {
 		select {

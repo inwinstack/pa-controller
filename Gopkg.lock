@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d835b96f95403287b73cbafde9567a6905fd8ad9ce0d84eb2c8f974247852565"
+  digest = "1:b47145800c01186a9c11eaf6824f722706ffca6d4c5d21c91fa61f79c27ca764"
   name = "github.com/PaloAltoNetworks/pango"
   packages = [
     ".",
@@ -48,6 +48,7 @@
     "poli",
     "poli/nat",
     "poli/security",
+    "testdata",
     "userid",
     "util",
     "version",
@@ -163,13 +164,16 @@
   version = "v0.3.6"
 
 [[projects]]
-  digest = "1:798bcddde4b0be7ea2319a245676afeaef12d2a284a87cf6f0182435087e32a7"
+  digest = "1:32e6a0b26c52758390a72be9e2a0606ec142a0cefcce74d7b62e00a6d2ff3179"
   name = "github.com/inwinstack/blended"
   packages = [
     "apis/inwinstack",
     "apis/inwinstack/v1",
+    "client/clientset/versioned",
+    "client/clientset/versioned/fake",
     "client/clientset/versioned/scheme",
     "client/clientset/versioned/typed/inwinstack/v1",
+    "client/clientset/versioned/typed/inwinstack/v1/fake",
   ]
   pruneopts = "UT"
   revision = "792180b3d77b89a66627003e5a12a57c1fa1c3f2"
@@ -365,21 +369,23 @@
   version = "kubernetes-1.11.0"
 
 [[projects]]
-  digest = "1:145647b653ff6a6882bbc2c4701ebcbce7be643007231d545560e4ce612ad5cb"
+  digest = "1:828cfcb0e8dda021b784143c02cb78d42b4495dc51e07e67bbb0a238e9ec6650"
   name = "k8s.io/apiextensions-apiserver"
   packages = [
     "pkg/apis/apiextensions",
     "pkg/apis/apiextensions/v1beta1",
     "pkg/client/clientset/clientset",
+    "pkg/client/clientset/clientset/fake",
     "pkg/client/clientset/clientset/scheme",
     "pkg/client/clientset/clientset/typed/apiextensions/v1beta1",
+    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1/fake",
   ]
   pruneopts = "UT"
   revision = "3de98c57bc05a81cf463e0ad7a0af4cec8a5b510"
   version = "kubernetes-1.11.0"
 
 [[projects]]
-  digest = "1:3e5d6f34fefbb0169943b5a167de9b2443f695e436e96f9ba0f1050c29799250"
+  digest = "1:b7a7277a24d4ca275a5c8d45dcfd90847fbbfdcd6b0bf43f23777a628cd9515c"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/errors",
@@ -410,15 +416,18 @@
     "pkg/util/framer",
     "pkg/util/intstr",
     "pkg/util/json",
+    "pkg/util/mergepatch",
     "pkg/util/net",
     "pkg/util/runtime",
     "pkg/util/sets",
+    "pkg/util/strategicpatch",
     "pkg/util/validation",
     "pkg/util/validation/field",
     "pkg/util/wait",
     "pkg/util/yaml",
     "pkg/version",
     "pkg/watch",
+    "third_party/forked/golang/json",
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "UT"
@@ -426,41 +435,72 @@
   version = "kubernetes-1.11.0"
 
 [[projects]]
-  digest = "1:024b0daaffb52bdf38e25a76b315dbe8445158ff9136aaa7818a7ec6c807dbc6"
+  digest = "1:6ec745815bcc9f656f039ffdb9dc2c85d16335fb7044615a5cddff09dded6a11"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
+    "discovery/fake",
     "kubernetes",
+    "kubernetes/fake",
     "kubernetes/scheme",
     "kubernetes/typed/admissionregistration/v1alpha1",
+    "kubernetes/typed/admissionregistration/v1alpha1/fake",
     "kubernetes/typed/admissionregistration/v1beta1",
+    "kubernetes/typed/admissionregistration/v1beta1/fake",
     "kubernetes/typed/apps/v1",
+    "kubernetes/typed/apps/v1/fake",
     "kubernetes/typed/apps/v1beta1",
+    "kubernetes/typed/apps/v1beta1/fake",
     "kubernetes/typed/apps/v1beta2",
+    "kubernetes/typed/apps/v1beta2/fake",
     "kubernetes/typed/authentication/v1",
+    "kubernetes/typed/authentication/v1/fake",
     "kubernetes/typed/authentication/v1beta1",
+    "kubernetes/typed/authentication/v1beta1/fake",
     "kubernetes/typed/authorization/v1",
+    "kubernetes/typed/authorization/v1/fake",
     "kubernetes/typed/authorization/v1beta1",
+    "kubernetes/typed/authorization/v1beta1/fake",
     "kubernetes/typed/autoscaling/v1",
+    "kubernetes/typed/autoscaling/v1/fake",
     "kubernetes/typed/autoscaling/v2beta1",
+    "kubernetes/typed/autoscaling/v2beta1/fake",
     "kubernetes/typed/batch/v1",
+    "kubernetes/typed/batch/v1/fake",
     "kubernetes/typed/batch/v1beta1",
+    "kubernetes/typed/batch/v1beta1/fake",
     "kubernetes/typed/batch/v2alpha1",
+    "kubernetes/typed/batch/v2alpha1/fake",
     "kubernetes/typed/certificates/v1beta1",
+    "kubernetes/typed/certificates/v1beta1/fake",
     "kubernetes/typed/core/v1",
+    "kubernetes/typed/core/v1/fake",
     "kubernetes/typed/events/v1beta1",
+    "kubernetes/typed/events/v1beta1/fake",
     "kubernetes/typed/extensions/v1beta1",
+    "kubernetes/typed/extensions/v1beta1/fake",
     "kubernetes/typed/networking/v1",
+    "kubernetes/typed/networking/v1/fake",
     "kubernetes/typed/policy/v1beta1",
+    "kubernetes/typed/policy/v1beta1/fake",
     "kubernetes/typed/rbac/v1",
+    "kubernetes/typed/rbac/v1/fake",
     "kubernetes/typed/rbac/v1alpha1",
+    "kubernetes/typed/rbac/v1alpha1/fake",
     "kubernetes/typed/rbac/v1beta1",
+    "kubernetes/typed/rbac/v1beta1/fake",
     "kubernetes/typed/scheduling/v1alpha1",
+    "kubernetes/typed/scheduling/v1alpha1/fake",
     "kubernetes/typed/scheduling/v1beta1",
+    "kubernetes/typed/scheduling/v1beta1/fake",
     "kubernetes/typed/settings/v1alpha1",
+    "kubernetes/typed/settings/v1alpha1/fake",
     "kubernetes/typed/storage/v1",
+    "kubernetes/typed/storage/v1/fake",
     "kubernetes/typed/storage/v1alpha1",
+    "kubernetes/typed/storage/v1alpha1/fake",
     "kubernetes/typed/storage/v1beta1",
+    "kubernetes/typed/storage/v1beta1/fake",
     "pkg/apis/clientauthentication",
     "pkg/apis/clientauthentication/v1alpha1",
     "pkg/apis/clientauthentication/v1beta1",
@@ -468,6 +508,7 @@
     "plugin/pkg/client/auth/exec",
     "rest",
     "rest/watch",
+    "testing",
     "tools/auth",
     "tools/cache",
     "tools/clientcmd",
@@ -490,27 +531,38 @@
   revision = "7d04d0e2a0a1a4d4a1cd6baa432a2301492e4e65"
   version = "v8.0.0"
 
+[[projects]]
+  branch = "master"
+  digest = "1:03a96603922fc1f6895ae083e1e16d943b55ef0656b56965351bd87e7d90485f"
+  name = "k8s.io/kube-openapi"
+  packages = ["pkg/util/proto"]
+  pruneopts = "UT"
+  revision = "0317810137be915b9cf888946c6e115c1bfac693"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "github.com/PaloAltoNetworks/pango",
-    "github.com/PaloAltoNetworks/pango/objs",
     "github.com/PaloAltoNetworks/pango/objs/srvc",
-    "github.com/PaloAltoNetworks/pango/poli",
     "github.com/PaloAltoNetworks/pango/poli/nat",
     "github.com/PaloAltoNetworks/pango/poli/security",
+    "github.com/PaloAltoNetworks/pango/testdata",
     "github.com/golang/glog",
     "github.com/inwinstack/blended/apis/inwinstack/v1",
-    "github.com/inwinstack/blended/client/clientset/versioned/typed/inwinstack/v1",
+    "github.com/inwinstack/blended/client/clientset/versioned",
+    "github.com/inwinstack/blended/client/clientset/versioned/fake",
     "github.com/inwinstack/operator-kit",
     "github.com/spf13/pflag",
     "github.com/stretchr/testify/assert",
     "k8s.io/api/core/v1",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
     "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset",
+    "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake",
+    "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/client-go/kubernetes",
+    "k8s.io/client-go/kubernetes/fake",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/cache",
     "k8s.io/client-go/tools/clientcmd",
