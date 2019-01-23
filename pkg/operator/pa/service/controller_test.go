@@ -95,15 +95,15 @@ func TestServiceController(t *testing.T) {
 
 	onAddSvc, err := client.InwinstackV1().Services().Get(svc.Name, metav1.GetOptions{})
 	assert.Nil(t, err)
-	assert.NotNil(t, onAddSvc.Status.Phase, inwinv1.ServiceActive)
+	assert.Equal(t, inwinv1.ServiceActive, onAddSvc.Status.Phase)
 
 	mc.AddResp(mc.Elm)
 	entry, err := fwSrvc.Get(conf.Vsys, onAddSvc.Name)
 	assert.Nil(t, err)
-	assert.Equal(t, entry.Name, onAddSvc.Name)
-	assert.Equal(t, entry.SourcePort, onAddSvc.Spec.SourcePort)
-	assert.Equal(t, entry.DestinationPort, onAddSvc.Spec.DestinationPort)
-	assert.Equal(t, entry.Protocol, onAddSvc.Spec.Protocol)
+	assert.Equal(t, onAddSvc.Name, entry.Name)
+	assert.Equal(t, onAddSvc.Spec.SourcePort, entry.SourcePort)
+	assert.Equal(t, onAddSvc.Spec.DestinationPort, entry.DestinationPort)
+	assert.Equal(t, onAddSvc.Spec.Protocol, entry.Protocol)
 
 	// Test onUpdate
 	mc.AddResp("")
@@ -116,9 +116,10 @@ func TestServiceController(t *testing.T) {
 	mc.AddResp(mc.Elm)
 	onUpdateEntry, err := fwSrvc.Get(conf.Vsys, onUpdateSvc.Name)
 	assert.Nil(t, err)
-	assert.NotNil(t, onUpdateSvc.Spec.DestinationPort, onUpdateEntry.DestinationPort)
+	assert.Equal(t, onUpdateSvc.Spec.DestinationPort, onUpdateEntry.DestinationPort)
 
 	// Test onDelete
+	// PA mock hasn’t implement delete API.
 	mc.AddResp("")
 	controller.onDelete(onUpdateSvc)
 }

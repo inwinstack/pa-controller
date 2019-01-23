@@ -103,7 +103,7 @@ func TestSecurityController(t *testing.T) {
 
 	onAddSec, err := client.InwinstackV1().Securities(namespace).Get(sec.Name, metav1.GetOptions{})
 	assert.Nil(t, err)
-	assert.NotNil(t, onAddSec.Status.Phase, inwinv1.SecurityActive)
+	assert.Equal(t, inwinv1.SecurityActive, onAddSec.Status.Phase)
 
 	mc.AddResp(mc.Elm)
 	entry, err := fwSec.Get(conf.Vsys, onAddSec.Name)
@@ -125,9 +125,10 @@ func TestSecurityController(t *testing.T) {
 	mc.AddResp(mc.Elm)
 	onUpdateEntry, err := fwSec.Get(conf.Vsys, onUpdateSec.Name)
 	assert.Nil(t, err)
-	assert.NotNil(t, onUpdateSec.Spec.DestinationAddresses, onUpdateEntry.DestinationAddresses)
+	assert.Equal(t, onUpdateSec.Spec.DestinationAddresses, onUpdateEntry.DestinationAddresses)
 
 	// Test onDelete
+	// PA mock hasn’t implement delete API.
 	mc.AddResp("")
 	controller.onDelete(onUpdateSec)
 }
