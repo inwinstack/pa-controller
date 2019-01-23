@@ -100,7 +100,7 @@ func TestNATController(t *testing.T) {
 
 	onAddNat, err := client.InwinstackV1().NATs(namespace).Get(nat.Name, metav1.GetOptions{})
 	assert.Nil(t, err)
-	assert.NotNil(t, onAddNat.Status.Phase, inwinv1.NATActive)
+	assert.Equal(t, inwinv1.NATActive, onAddNat.Status.Phase)
 
 	mc.AddResp(mc.Elm)
 	entry, err := fwNat.Get(conf.Vsys, onAddNat.Name)
@@ -126,9 +126,10 @@ func TestNATController(t *testing.T) {
 	mc.AddResp(mc.Elm)
 	onUpdateEntry, err := fwNat.Get(conf.Vsys, onUpdateNat.Name)
 	assert.Nil(t, err)
-	assert.NotNil(t, onUpdateNat.Spec.DatAddress, onUpdateEntry.DatAddress)
+	assert.Equal(t, onUpdateNat.Spec.DatAddress, onUpdateEntry.DatAddress)
 
 	// Test onDelete
+	// PA mock hasn’t implement delete API.
 	mc.AddResp("")
 	controller.onDelete(onUpdateNat)
 }
