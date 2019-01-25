@@ -169,6 +169,7 @@ func (c *ServiceController) setAndUpdateObject(svc *inwinv1.Service) error {
 	c.commit <- true
 
 	svc.Status.Phase = inwinv1.ServiceActive
+	svc.Status.Reason = ""
 	svc.Status.LastUpdateTime = metav1.NewTime(time.Now())
 	delete(svc.Annotations, constants.AnnKeyServiceRefresh)
 	if _, err := c.clientset.InwinstackV1().Services().Update(svc); err != nil {
