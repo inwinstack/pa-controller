@@ -161,6 +161,7 @@ func (c *NATController) setAndUpdatePolicy(n *inwinv1.NAT) error {
 	c.commit <- true
 
 	n.Status.Phase = inwinv1.NATActive
+	n.Status.Reason = ""
 	n.Status.LastUpdateTime = metav1.NewTime(time.Now())
 	if _, err := c.clientset.InwinstackV1().NATs(n.Namespace).Update(n); err != nil {
 		return err

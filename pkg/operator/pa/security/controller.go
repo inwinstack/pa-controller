@@ -176,6 +176,7 @@ func (c *SecurityController) setAndUpdatePolicy(sec *inwinv1.Security) error {
 	c.commit <- true
 
 	sec.Status.Phase = inwinv1.SecurityActive
+	sec.Status.Reason = ""
 	sec.Status.LastUpdateTime = metav1.NewTime(time.Now())
 	if _, err := c.clientset.InwinstackV1().Securities(sec.Namespace).Update(sec); err != nil {
 		return err
