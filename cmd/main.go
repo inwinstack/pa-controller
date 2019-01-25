@@ -45,7 +45,7 @@ func parserFlags() {
 	flag.StringVarP(&conf.Vsys, "vsys", "", "", "A virtual system (vsys) is an independent (virtual) firewall instance that you can separately manage within a physical firewall.")
 	flag.IntVarP(&conf.Retry, "commit-retry", "", 5, "The number of retry for PA commit job.")
 	flag.IntVarP(&conf.CommitWaitTime, "commit-wait-time", "", 2, "The length of time to wait next PA commit.")
-	flag.IntVarP(&conf.Interval, "check-failed-interval", "", 30, "The controller check failed resource in duration second.")
+	flag.IntVarP(&conf.Interval, "check-failed-interval", "", 30, "The seconds of retry interval for the failed resource.")
 	flag.BoolVarP(&ver, "version", "", false, "Display the version.")
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	flag.Parse()
