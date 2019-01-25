@@ -18,7 +18,6 @@ package security
 
 import (
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/golang/glog"
@@ -94,8 +93,8 @@ func (c *SecurityController) onAdd(obj interface{}) {
 		sec.Status.Phase = inwinv1.SecurityPending
 	}
 
-	if sec.Status.Phase == inwinv1.SecurityPending {
-		if err := c.setAndUpdatePolicy(sec); err != nil {
+	if sec.Status.Phase == inwinv1.SecurityPending || sec.Status.Phase == inwinv1.SecurityFailed {
+		if err := c.createOrUpdatePolicy(sec); err != nil {
 			glog.Errorf("Failed to set policy on Security %s in %s namespace: %+v.", sec.Name, sec.Namespace, err)
 		}
 	}
@@ -106,8 +105,9 @@ func (c *SecurityController) onUpdate(oldObj, newObj interface{}) {
 	sec := newObj.(*inwinv1.Security).DeepCopy()
 	glog.V(2).Infof("Received update on Security %s in %s namespace.", sec.Name, sec.Namespace)
 
-	if !reflect.DeepEqual(old.Spec, sec.Spec) || sec.Status.Phase == inwinv1.SecurityPending {
-		if err := c.setAndUpdatePolicy(sec); err != nil {
+	_, refresh := sec.Annotations[constants.AnnKeyServiceRefresh]
+	if !reflect.DeepEqual(old.Spec, sec.Spec) || refresh || sec.Status.Phase == inwinv1.SecurityPending {
+		if err := c.createOrUpdatePolicy(sec); err != nil {
 			glog.Errorf("Failed to update policy on Security %s in %s namespace: %+v.", sec.Name, sec.Namespace, err)
 		}
 	}
@@ -122,54 +122,26 @@ func (c *SecurityController) onDelete(obj interface{}) {
 	}
 }
 
-func (c *SecurityController) getRetry(sec *inwinv1.Security) int {
-	if v, ok := sec.Annotations[constants.AnnKeyPolicyRetry]; ok {
-		retry, _ := strconv.Atoi(v)
-		return retry
-	}
-	return 0
-}
-
-func (c *SecurityController) setRetry(sec *inwinv1.Security, retry int) {
+func (c *SecurityController) SetRefresh(sec *inwinv1.Security) error {
 	if sec.Annotations == nil {
 		sec.Annotations = map[string]string{}
 	}
-	sec.Annotations[constants.AnnKeyPolicyRetry] = strconv.Itoa(retry)
-}
 
-func (c *SecurityController) checkRetry(sec *inwinv1.Security, err error) error {
-	retry := c.getRetry(sec)
-	switch {
-	case retry < c.conf.Retry:
-		retry++
-		c.setRetry(sec, retry)
-	case retry >= c.conf.Retry:
-		sec.Status.Phase = inwinv1.SecurityFailed
-		delete(sec.Annotations, constants.AnnKeyPolicyRetry)
-	}
-
-	sec.Status.Reason = err.Error()
-	sec.Status.LastUpdateTime = metav1.NewTime(time.Now())
-	if _, serr := c.clientset.InwinstackV1().Securities(sec.Namespace).Update(sec); serr != nil {
-		return serr
+	sec.Annotations[constants.AnnKeyServiceRefresh] = "true"
+	if _, err := c.clientset.InwinstackV1().Securities(sec.Namespace).Update(sec); err != nil {
+		return err
 	}
 	return nil
 }
 
-func (c *SecurityController) setAndUpdatePolicy(sec *inwinv1.Security) error {
+func (c *SecurityController) createOrUpdatePolicy(sec *inwinv1.Security) error {
 	entry := pautil.ToSecurityEntry(sec)
 	if err := c.security.Edit(c.conf.Vsys, *entry); err != nil {
-		if serr := c.checkRetry(sec, err); serr != nil {
-			return serr
-		}
-		return err
+		return c.createFailedStatus(sec, err)
 	}
 
 	if err := c.security.MoveGroup(c.conf.Vsys, c.conf.MoveType, c.conf.MoveRule, *entry); err != nil {
-		if serr := c.checkRetry(sec, err); serr != nil {
-			return serr
-		}
-		return err
+		return c.createFailedStatus(sec, err)
 	}
 
 	// commit the changes to PA
@@ -178,6 +150,18 @@ func (c *SecurityController) setAndUpdatePolicy(sec *inwinv1.Security) error {
 	sec.Status.Phase = inwinv1.SecurityActive
 	sec.Status.Reason = ""
 	sec.Status.LastUpdateTime = metav1.NewTime(time.Now())
+	delete(sec.Annotations, constants.AnnKeyServiceRefresh)
+	if _, err := c.clientset.InwinstackV1().Securities(sec.Namespace).Update(sec); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *SecurityController) createFailedStatus(sec *inwinv1.Security, err error) error {
+	sec.Status.Phase = inwinv1.SecurityFailed
+	sec.Status.Reason = err.Error()
+	sec.Status.LastUpdateTime = metav1.NewTime(time.Now())
+	delete(sec.Annotations, constants.AnnKeyServiceRefresh)
 	if _, err := c.clientset.InwinstackV1().Securities(sec.Namespace).Update(sec); err != nil {
 		return err
 	}

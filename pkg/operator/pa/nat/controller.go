@@ -18,7 +18,6 @@ package nat
 
 import (
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/golang/glog"
@@ -93,8 +92,8 @@ func (c *NATController) onAdd(obj interface{}) {
 		nat.Status.Phase = inwinv1.NATPending
 	}
 
-	if nat.Status.Phase == inwinv1.NATPending {
-		if err := c.setAndUpdatePolicy(nat); err != nil {
+	if nat.Status.Phase == inwinv1.NATPending || nat.Status.Phase == inwinv1.NATFailed {
+		if err := c.createOrUpdatePolicy(nat); err != nil {
 			glog.Errorf("Failed to set policy on NAT %s in %s namespace: %+v.", nat.Name, nat.Namespace, err)
 		}
 	}
@@ -105,8 +104,9 @@ func (c *NATController) onUpdate(oldObj, newObj interface{}) {
 	nat := newObj.(*inwinv1.NAT).DeepCopy()
 	glog.V(2).Infof("Received update on NAT %s in %s namespace.", nat.Name, nat.Namespace)
 
-	if !reflect.DeepEqual(old.Spec, nat.Spec) || nat.Status.Phase == inwinv1.NATPending {
-		if err := c.setAndUpdatePolicy(nat); err != nil {
+	_, refresh := nat.Annotations[constants.AnnKeyServiceRefresh]
+	if !reflect.DeepEqual(old.Spec, nat.Spec) || refresh || nat.Status.Phase == inwinv1.NATPending {
+		if err := c.createOrUpdatePolicy(nat); err != nil {
 			glog.Errorf("Failed to update policy on NAT %s in %s namespace: %+v.", nat.Name, nat.Namespace, err)
 		}
 	}
@@ -121,57 +121,51 @@ func (c *NATController) onDelete(obj interface{}) {
 	}
 }
 
-func (c *NATController) getRetry(n *inwinv1.NAT) int {
-	if v, ok := n.Annotations[constants.AnnKeyPolicyRetry]; ok {
-		retry, _ := strconv.Atoi(v)
-		return retry
-	}
-	return 0
-}
-
-func (c *NATController) setRetry(n *inwinv1.NAT, retry int) {
-	if n.Annotations == nil {
-		n.Annotations = map[string]string{}
-	}
-	n.Annotations[constants.AnnKeyPolicyRetry] = strconv.Itoa(retry)
-}
-
-func (c *NATController) setAndUpdatePolicy(n *inwinv1.NAT) error {
-	entry := pautil.ToNatEntry(n)
-	if err := c.nat.Edit(c.conf.Vsys, *entry); err != nil {
-		retry := c.getRetry(n)
-		switch {
-		case retry < c.conf.Retry:
-			retry++
-			c.setRetry(n, retry)
-		case retry >= c.conf.Retry:
-			n.Status.Phase = inwinv1.NATFailed
-			delete(n.Annotations, constants.AnnKeyPolicyRetry)
-		}
-
-		n.Status.Reason = err.Error()
-		n.Status.LastUpdateTime = metav1.NewTime(time.Now())
-		if _, serr := c.clientset.InwinstackV1().NATs(n.Namespace).Update(n); serr != nil {
-			return serr
-		}
-		return err
+func (c *NATController) SetRefresh(nat *inwinv1.NAT) error {
+	if nat.Annotations == nil {
+		nat.Annotations = map[string]string{}
 	}
 
-	// commit the changes to PA
-	c.commit <- true
-
-	n.Status.Phase = inwinv1.NATActive
-	n.Status.Reason = ""
-	n.Status.LastUpdateTime = metav1.NewTime(time.Now())
-	if _, err := c.clientset.InwinstackV1().NATs(n.Namespace).Update(n); err != nil {
+	nat.Annotations[constants.AnnKeyServiceRefresh] = "true"
+	if _, err := c.clientset.InwinstackV1().NATs(nat.Namespace).Update(nat); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *NATController) deletePolicy(n *inwinv1.NAT) error {
-	if n.Status.Phase == inwinv1.NATActive {
-		if err := c.nat.Delete(c.conf.Vsys, n.Name); err != nil {
+func (c *NATController) createOrUpdatePolicy(nat *inwinv1.NAT) error {
+	entry := pautil.ToNatEntry(nat)
+	if err := c.nat.Edit(c.conf.Vsys, *entry); err != nil {
+		return c.createFailedStatus(nat, err)
+	}
+
+	// commit the changes to PA
+	c.commit <- true
+
+	nat.Status.Phase = inwinv1.NATActive
+	nat.Status.Reason = ""
+	nat.Status.LastUpdateTime = metav1.NewTime(time.Now())
+	delete(nat.Annotations, constants.AnnKeyServiceRefresh)
+	if _, err := c.clientset.InwinstackV1().NATs(nat.Namespace).Update(nat); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *NATController) createFailedStatus(nat *inwinv1.NAT, err error) error {
+	nat.Status.Phase = inwinv1.NATFailed
+	nat.Status.Reason = err.Error()
+	nat.Status.LastUpdateTime = metav1.NewTime(time.Now())
+	delete(nat.Annotations, constants.AnnKeyServiceRefresh)
+	if _, err := c.clientset.InwinstackV1().NATs(nat.Namespace).Update(nat); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *NATController) deletePolicy(nat *inwinv1.NAT) error {
+	if nat.Status.Phase == inwinv1.NATActive {
+		if err := c.nat.Delete(c.conf.Vsys, nat.Name); err != nil {
 			return err
 		}
 

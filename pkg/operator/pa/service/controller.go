@@ -18,7 +18,6 @@ package service
 
 import (
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/PaloAltoNetworks/pango/objs/srvc"
@@ -93,8 +92,8 @@ func (c *ServiceController) onAdd(obj interface{}) {
 		svc.Status.Phase = inwinv1.ServicePending
 	}
 
-	if svc.Status.Phase == inwinv1.ServicePending {
-		if err := c.setAndUpdateObject(svc); err != nil {
+	if svc.Status.Phase == inwinv1.ServicePending || svc.Status.Phase == inwinv1.ServiceFailed {
+		if err := c.createOrUpdateObject(svc); err != nil {
 			glog.Errorf("Failed to set object on Service %s: %+v.", svc.Name, err)
 		}
 	}
@@ -105,9 +104,9 @@ func (c *ServiceController) onUpdate(oldObj, newObj interface{}) {
 	svc := newObj.(*inwinv1.Service).DeepCopy()
 	glog.V(2).Infof("Received update on Service %s.", svc.Name)
 
-	_, needCommit := svc.Annotations[constants.AnnKeyServiceRefresh]
-	if !reflect.DeepEqual(old.Spec, svc.Spec) || needCommit || svc.Status.Phase == inwinv1.ServicePending {
-		if err := c.setAndUpdateObject(svc); err != nil {
+	_, refresh := svc.Annotations[constants.AnnKeyServiceRefresh]
+	if !reflect.DeepEqual(old.Spec, svc.Spec) || refresh || svc.Status.Phase == inwinv1.ServicePending {
+		if err := c.createOrUpdateObject(svc); err != nil {
 			glog.Errorf("Failed to update object on Service %s: %+v.", svc.Name, err)
 		}
 	}
@@ -122,47 +121,22 @@ func (c *ServiceController) onDelete(obj interface{}) {
 	}
 }
 
-func (c *ServiceController) getRetry(svc *inwinv1.Service) int {
-	if v, ok := svc.Annotations[constants.AnnKeyPolicyRetry]; ok {
-		retry, _ := strconv.Atoi(v)
-		return retry
-	}
-	return 0
-}
-
-func (c *ServiceController) setRetry(svc *inwinv1.Service, retry int) {
+func (c *ServiceController) SetRefresh(svc *inwinv1.Service) error {
 	if svc.Annotations == nil {
 		svc.Annotations = map[string]string{}
 	}
-	svc.Annotations[constants.AnnKeyPolicyRetry] = strconv.Itoa(retry)
-}
 
-func (c *ServiceController) checkRetry(svc *inwinv1.Service, err error) error {
-	retry := c.getRetry(svc)
-	switch {
-	case retry < c.conf.Retry:
-		retry++
-		c.setRetry(svc, retry)
-	case retry >= c.conf.Retry:
-		svc.Status.Phase = inwinv1.ServiceFailed
-		delete(svc.Annotations, constants.AnnKeyPolicyRetry)
-	}
-
-	svc.Status.Reason = err.Error()
-	svc.Status.LastUpdateTime = metav1.NewTime(time.Now())
-	if _, serr := c.clientset.InwinstackV1().Services().Update(svc); serr != nil {
-		return serr
+	svc.Annotations[constants.AnnKeyServiceRefresh] = "true"
+	if _, err := c.clientset.InwinstackV1().Services().Update(svc); err != nil {
+		return err
 	}
 	return nil
 }
 
-func (c *ServiceController) setAndUpdateObject(svc *inwinv1.Service) error {
+func (c *ServiceController) createOrUpdateObject(svc *inwinv1.Service) error {
 	entry := pautil.ToServiceEntry(svc)
 	if err := c.srvc.Edit(c.conf.Vsys, *entry); err != nil {
-		if serr := c.checkRetry(svc, err); serr != nil {
-			return serr
-		}
-		return err
+		return c.createFailedStatus(svc, err)
 	}
 
 	// commit the changes to PA
@@ -174,6 +148,17 @@ func (c *ServiceController) setAndUpdateObject(svc *inwinv1.Service) error {
 	delete(svc.Annotations, constants.AnnKeyServiceRefresh)
 	if _, err := c.clientset.InwinstackV1().Services().Update(svc); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (c *ServiceController) createFailedStatus(svc *inwinv1.Service, err error) error {
+	svc.Status.Phase = inwinv1.ServiceFailed
+	svc.Status.Reason = err.Error()
+	svc.Status.LastUpdateTime = metav1.NewTime(time.Now())
+	delete(svc.Annotations, constants.AnnKeyServiceRefresh)
+	if _, serr := c.clientset.InwinstackV1().Services().Update(svc); serr != nil {
+		return serr
 	}
 	return nil
 }
