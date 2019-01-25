@@ -30,4 +30,5 @@ spec:
         - --username=admin
         - --password=admin
         - --commit-wait-time=2
-        - --retry=5
+        - --commit-retry=5
+        - --check-failed-interval=30
