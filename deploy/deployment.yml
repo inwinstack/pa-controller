@@ -7,11 +7,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pa-controller
+      k8s-app: pa-controller
   template:
     metadata:
       labels:
-        app: pa-controller
+        k8s-app: pa-controller
     spec:
       priorityClassName: system-cluster-critical
       tolerations:
@@ -30,4 +30,5 @@ spec:
         - --username=admin
         - --password=admin
         - --commit-wait-time=2
-        - --retry=5
+        - --commit-retry=5
+        - --check-failed-interval=30

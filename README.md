@@ -25,10 +25,10 @@ Run the following command to debug:
 $ go run cmd/main.go \
     --kubeconfig $HOME/.kube/config \
     --logtostderr \
-    --pa-host=172.22.132.114 \
-    --pa-username=admin \
-    --pa-password=admin \
-    -v=2
+    -v=2 \
+    --host=172.22.132.114 \
+    --username=admin \
+    --password=admin 
 ```
 
 ## Deploy in the cluster

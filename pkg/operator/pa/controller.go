@@ -18,6 +18,7 @@ import (
 
 	"github.com/PaloAltoNetworks/pango"
 	"github.com/golang/glog"
+	inwinv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
 	clientset "github.com/inwinstack/blended/client/clientset/versioned"
 	opkit "github.com/inwinstack/operator-kit"
 	"github.com/inwinstack/pa-controller/pkg/config"
@@ -26,6 +27,7 @@ import (
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/service"
 	"github.com/inwinstack/pa-controller/pkg/util"
 	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Controller struct {
@@ -81,7 +83,8 @@ func (c *Controller) StartWatch(namespace string, stopCh chan struct{}) {
 	c.nat.StartWatch(v1.NamespaceAll, stopCh)
 	c.security.StartWatch(v1.NamespaceAll, stopCh)
 	c.service.StartWatch(v1.NamespaceAll, stopCh)
-	go c.handleCommitJob()
+	go c.handleCommitJob(stopCh)
+	go c.keepRetryFailedResources(stopCh)
 }
 
 func (c *Controller) showInfos() {
@@ -114,7 +117,7 @@ func (c *Controller) waitNextCommitJob(t time.Duration) bool {
 	}
 }
 
-func (c *Controller) handleCommitJob() {
+func (c *Controller) handleCommitJob(stopCh chan struct{}) {
 	for {
 		select {
 		case ok := <-c.commit:
@@ -125,6 +128,84 @@ func (c *Controller) handleCommitJob() {
 					util.Retry(c.commitToPA, time.Second*2, c.conf.Retry)
 				}
 			}
+		case <-stopCh:
+			return
 		}
 	}
+}
+
+func (c *Controller) keepRetryFailedResources(stopCh <-chan struct{}) {
+	inteval := time.Duration(c.conf.Interval) * time.Second
+	ticker := time.NewTicker(inteval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			c.retryFailedServices()
+			c.retryFailedNATs()
+			c.retryFailedSecurities()
+		case <-stopCh:
+			return
+		}
+	}
+}
+
+func (c *Controller) retryFailedSecurities() {
+	secs, err := c.clientset.InwinstackV1().Securities(v1.NamespaceAll).List(metav1.ListOptions{})
+	if err != nil {
+		glog.Error(err)
+	}
+
+	for _, sec := range secs.Items {
+		if sec.Status.Phase == inwinv1.SecurityFailed {
+			glog.V(4).Infof("Retrying object on Security %s in namespace %s.", sec.Name, sec.Namespace)
+			if err := c.setRefresh(&sec); err != nil {
+				glog.Errorf("Failed to retry object on Security %s in namespace %s: %+v.", sec.Name, sec.Namespace, err)
+			}
+		}
+	}
+}
+
+func (c *Controller) retryFailedNATs() {
+	nats, err := c.clientset.InwinstackV1().NATs(v1.NamespaceAll).List(metav1.ListOptions{})
+	if err != nil {
+		glog.Error(err)
+	}
+
+	for _, nat := range nats.Items {
+		if nat.Status.Phase == inwinv1.NATFailed {
+			glog.V(4).Infof("Retrying object on NAT %s in namespace %s.", nat.Name, nat.Namespace)
+			if err := c.setRefresh(&nat); err != nil {
+				glog.Errorf("Failed to retry object on NAT %s in namespace %s: %+v.", nat.Name, nat.Namespace, err)
+			}
+		}
+	}
+}
+
+func (c *Controller) retryFailedServices() {
+	srvcs, err := c.clientset.InwinstackV1().Services().List(metav1.ListOptions{})
+	if err != nil {
+		glog.Error(err)
+	}
+
+	for _, srvc := range srvcs.Items {
+		if srvc.Status.Phase == inwinv1.ServiceFailed {
+			glog.V(4).Infof("Retrying object on Service %s.", srvc.Name)
+			if err := c.setRefresh(&srvc); err != nil {
+				glog.Errorf("Failed to retry object on Service %s: %+v.", srvc.Name, err)
+			}
+		}
+	}
+}
+
+func (c *Controller) setRefresh(obj interface{}) error {
+	switch v := obj.(type) {
+	case inwinv1.Security:
+		return c.security.SetRefresh(&v)
+	case inwinv1.NAT:
+		return c.nat.SetRefresh(&v)
+	case inwinv1.Service:
+		return c.service.SetRefresh(&v)
+	}
+	return nil
 }

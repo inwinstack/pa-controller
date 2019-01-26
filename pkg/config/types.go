@@ -18,6 +18,7 @@ package config
 
 type OperatorConfig struct {
 	Kubeconfig string
+	Interval   int
 	Retry      int
 
 	// PA flags
