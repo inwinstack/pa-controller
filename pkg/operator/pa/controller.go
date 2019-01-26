@@ -135,8 +135,8 @@ func (c *Controller) handleCommitJob(stopCh chan struct{}) {
 }
 
 func (c *Controller) keepRetryFailedResources(stopCh <-chan struct{}) {
-	inteval := time.Duration(c.conf.Interval) * time.Second
-	ticker := time.NewTicker(inteval)
+	interval := time.Duration(c.conf.Interval) * time.Second
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
 		select {
