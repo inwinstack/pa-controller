@@ -117,7 +117,7 @@ func (c *Controller) waitNextCommitJob(t time.Duration) bool {
 	}
 }
 
-func (c *Controller) handleCommitJob(stopCh chan struct{}) {
+func (c *Controller) handleCommitJob(stopCh <-chan struct{}) {
 	for {
 		select {
 		case ok := <-c.commit:
