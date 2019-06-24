@@ -94,7 +94,7 @@ func (c *Controller) showInfos() {
 }
 
 func (c *Controller) commitToPA() error {
-	_, err := c.fw.Commit("", false, false, false, false)
+	_, err := c.fw.Commit("", false, true, false, false)
 	if err != nil {
 		return err
 	}
