@@ -31,14 +31,14 @@ const namespace = "default"
 
 func TestController(t *testing.T) {
 	client := fake.NewSimpleClientset()
-	pwdConf := &config.OperatorConfig{
+	pwdConf := &config.Operator{
 		Host:     "172.22.132.200",
 		Username: "admin",
 		Password: "admin",
 		Vsys:     "",
 	}
 
-	keyConf := &config.OperatorConfig{
+	keyConf := &config.Operator{
 		Host:     "172.22.132.200",
 		Username: "admin",
 		APIKey:   "SSdtIFNoYW1hbiBLaW5nCg==",

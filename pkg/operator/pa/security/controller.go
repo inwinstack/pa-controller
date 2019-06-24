@@ -52,7 +52,7 @@ var Resource = opkit.CustomResource{
 type SecurityController struct {
 	ctx       *opkit.Context
 	clientset clientset.Interface
-	conf      *config.OperatorConfig
+	conf      *config.Operator
 	security  *security.FwSecurity
 	commit    chan bool
 }
@@ -61,7 +61,7 @@ func NewController(
 	ctx *opkit.Context,
 	clientset clientset.Interface,
 	security *security.FwSecurity,
-	conf *config.OperatorConfig,
+	conf *config.Operator,
 	commit chan bool) *SecurityController {
 	return &SecurityController{
 		ctx:       ctx,

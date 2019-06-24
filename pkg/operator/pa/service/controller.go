@@ -49,7 +49,7 @@ var Resource = opkit.CustomResource{
 }
 
 type ServiceController struct {
-	conf      *config.OperatorConfig
+	conf      *config.Operator
 	ctx       *opkit.Context
 	clientset clientset.Interface
 	srvc      *srvc.FwSrvc
@@ -60,7 +60,7 @@ func NewController(
 	ctx *opkit.Context,
 	clientset clientset.Interface,
 	srvc *srvc.FwSrvc,
-	conf *config.OperatorConfig,
+	conf *config.Operator,
 	commit chan bool) *ServiceController {
 	return &ServiceController{
 		ctx:       ctx,
