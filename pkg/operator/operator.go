@@ -32,7 +32,7 @@ import (
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/nat"
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/security"
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/service"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
@@ -46,12 +46,12 @@ const (
 
 type Operator struct {
 	ctx        *opkit.Context
-	conf       *config.OperatorConfig
+	conf       *config.Operator
 	resources  []opkit.CustomResource
 	controller *pa.Controller
 }
 
-func NewMainOperator(conf *config.OperatorConfig) *Operator {
+func NewMainOperator(conf *config.Operator) *Operator {
 	return &Operator{
 		resources: []opkit.CustomResource{
 			nat.Resource,

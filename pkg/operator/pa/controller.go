@@ -26,14 +26,14 @@ import (
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/security"
 	"github.com/inwinstack/pa-controller/pkg/operator/pa/service"
 	"github.com/inwinstack/pa-controller/pkg/util"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Controller struct {
 	ctx       *opkit.Context
 	clientset clientset.Interface
-	conf      *config.OperatorConfig
+	conf      *config.Operator
 	fw        *pango.Firewall
 	commit    chan bool
 
@@ -42,7 +42,7 @@ type Controller struct {
 	nat      *nat.NATController
 }
 
-func NewController(ctx *opkit.Context, clientset clientset.Interface, conf *config.OperatorConfig) *Controller {
+func NewController(ctx *opkit.Context, clientset clientset.Interface, conf *config.Operator) *Controller {
 	fw := &pango.Firewall{Client: pango.Client{
 		Hostname: conf.Host,
 		Username: conf.Username,
@@ -94,7 +94,8 @@ func (c *Controller) showInfos() {
 }
 
 func (c *Controller) commitToPA() error {
-	_, err := c.fw.Commit("", false, true, false, false)
+	cfg := *c.conf
+	_, err := c.fw.Commit("", cfg.DaNPartial, cfg.PaOPartial, cfg.ForceCommit, cfg.SyncCommit)
 	if err != nil {
 		return err
 	}

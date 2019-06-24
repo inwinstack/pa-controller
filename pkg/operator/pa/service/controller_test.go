@@ -49,7 +49,7 @@ func TestServiceController(t *testing.T) {
 	coreClient := corefake.NewSimpleClientset()
 	extensionsClient := extensionsfake.NewSimpleClientset()
 
-	conf := &config.OperatorConfig{
+	conf := &config.Operator{
 		Host:     "172.22.132.200",
 		Username: "admin",
 		Password: "admin",

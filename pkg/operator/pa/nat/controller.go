@@ -51,7 +51,7 @@ var Resource = opkit.CustomResource{
 type NATController struct {
 	ctx       *opkit.Context
 	clientset clientset.Interface
-	conf      *config.OperatorConfig
+	conf      *config.Operator
 	nat       *nat.FwNat
 	commit    chan bool
 }
@@ -60,7 +60,7 @@ func NewController(
 	ctx *opkit.Context,
 	clientset clientset.Interface,
 	nat *nat.FwNat,
-	conf *config.OperatorConfig,
+	conf *config.Operator,
 	commit chan bool) *NATController {
 	return &NATController{
 		ctx:       ctx,

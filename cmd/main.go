@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	conf = &config.OperatorConfig{}
+	conf = &config.Operator{}
 	ver  bool
 )
 
@@ -46,6 +46,10 @@ func parserFlags() {
 	flag.IntVarP(&conf.Retry, "commit-retry", "", 5, "The number of retry for PA commit job.")
 	flag.IntVarP(&conf.CommitWaitTime, "commit-wait-time", "", 2, "The length of time to wait next PA commit.")
 	flag.IntVarP(&conf.Interval, "check-failed-interval", "", 30, "The seconds of retry interval for the failed resource.")
+	flag.BoolVarP(&conf.ForceCommit, "force-commit", "", false, "Flag force-commit is if you want to force a commit even if no changes are required.")
+	flag.BoolVarP(&conf.SyncCommit, "sync-commit", "", false, "Flag sync-commit should be true if you want this function to block until the commit job completes.")
+	flag.BoolVarP(&conf.DaNPartial, "dan-partial", "", true, "Flag dan-partial is an advanced option for doing the partial commit for the device and network configuration.")
+	flag.BoolVarP(&conf.PaOPartial, "pao-partial", "", true, "Flag pao-partial is an advanced option for doing the partial commit for the policy and object configuration.")
 	flag.BoolVarP(&ver, "version", "", false, "Display the version.")
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	flag.Parse()

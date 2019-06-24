@@ -16,7 +16,7 @@ limitations under the License.
 
 package config
 
-type OperatorConfig struct {
+type Operator struct {
 	Kubeconfig string
 	Interval   int
 	Retry      int
@@ -30,4 +30,8 @@ type OperatorConfig struct {
 	MoveRule       string
 	Vsys           string
 	CommitWaitTime int
+	ForceCommit    bool
+	SyncCommit     bool
+	DaNPartial     bool
+	PaOPartial     bool
 }
