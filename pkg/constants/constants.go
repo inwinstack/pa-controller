@@ -1,5 +1,5 @@
 /*
-Copyright © 2018 inwinSTACK.inc
+Copyright © 2018 inwinSTACK Inc
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@ limitations under the License.
 
 package constants
 
-const (
-	// AnnKeyPolicyRetry set in NAT and Security to retry failed resource
-	AnnKeyPolicyRetry = "inwinstack.com/policy-retry"
-	// AnnKeyServiceRefresh set in Service to refresh the annotations
-	AnnKeyServiceRefresh = "inwinstack.com/service-refresh"
-)
+const CustomFinalizer = "finalizer.inwinstack.com"
+
+const NeedUpdateKey = "inwinstack.com/need-update"

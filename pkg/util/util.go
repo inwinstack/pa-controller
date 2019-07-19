@@ -1,5 +1,5 @@
 /*
-Copyright © 2018 inwinSTACK.inc
+Copyright © 2018 inwinSTACK Inc
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -38,4 +38,8 @@ func Retry(callback func() error, d time.Duration, attempts int) (err error) {
 		time.Sleep(d)
 	}
 	return err
+}
+
+func SubtractNowTime(t time.Time) time.Duration {
+	return time.Now().Sub(t)
 }

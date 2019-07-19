@@ -14,11 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package version
+package log
 
-// version will be overridden with the current version at build time using the -X linker flag
-var version = "v0.0.0-unset"
+import (
+	"fmt"
+	"log"
+	"os"
+	"strings"
+	"time"
+)
 
-func GetVersion() string {
-	return version
+type LogWriter struct{}
+
+func init() {
+	log.SetFlags(0)
+	log.SetFlags(log.Lshortfile)
+}
+
+func (w LogWriter) Write(bytes []byte) (int, error) {
+	t := time.Now().UTC().Format("0102 15:04:05.999999")
+	f := strings.Split(string(bytes), ": ")[0]
+	s := strings.TrimPrefix(string(bytes), f)
+	return fmt.Printf("I%s\t%d %s PAN] %s", t, os.Getpid(), f, s[2:])
 }

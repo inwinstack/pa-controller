@@ -12,7 +12,7 @@ spec:
   hipProfiles:
   - any
   destinationZones:
-  - AI public service network
+  - trust
   destinationAddresses:
   - 140.23.110.10
   applications:

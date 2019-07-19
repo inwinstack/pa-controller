@@ -1,5 +1,5 @@
 /*
-Copyright © 2018 inwinSTACK.inc
+Copyright © 2018 inwinSTACK Inc
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,22 +17,39 @@ limitations under the License.
 package operator
 
 import (
+	"context"
 	"fmt"
+	"reflect"
 	"testing"
-	"time"
 
-	opkit "github.com/inwinstack/operator-kit"
+	blendedv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
+	blendedfake "github.com/inwinstack/blended/client/clientset/versioned/fake"
 	"github.com/inwinstack/pa-controller/pkg/config"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	extensionsfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
-	corefake "k8s.io/client-go/kubernetes/fake"
-
+	"github.com/inwinstack/pango"
+	"github.com/inwinstack/pango/objs"
+	"github.com/inwinstack/pango/objs/srvc"
+	"github.com/inwinstack/pango/poli"
+	"github.com/inwinstack/pango/poli/nat"
+	"github.com/inwinstack/pango/poli/security"
 	"github.com/stretchr/testify/assert"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	extensionsfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createCRD(context *opkit.Context, resource opkit.CustomResource) error {
+type customResource struct {
+	Name       string
+	Kind       string
+	Group      string
+	Plural     string
+	Version    string
+	Scope      apiextensionsv1beta1.ResourceScope
+	ShortNames []string
+}
+
+func createCRD(clientset apiextensionsclientset.Interface, resource customResource) error {
 	crdName := fmt.Sprintf("%s.%s", resource.Plural, resource.Group)
 	crd := &apiextensionsv1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
@@ -50,8 +67,7 @@ func createCRD(context *opkit.Context, resource opkit.CustomResource) error {
 			},
 		},
 	}
-
-	_, err := context.APIExtensionClientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
+	_, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
 	if err != nil {
 		if !errors.IsAlreadyExists(err) {
 			return fmt.Errorf("failed to create %s CRD. %+v", resource.Name, err)
@@ -61,41 +77,58 @@ func createCRD(context *opkit.Context, resource opkit.CustomResource) error {
 }
 
 func TestOperator(t *testing.T) {
-	coreClient := corefake.NewSimpleClientset()
+	ctx, cancel := context.WithCancel(context.Background())
+	fw := &pango.Firewall{
+		Policies: &poli.FwPoli{
+			Nat:      &nat.FwNat{},
+			Security: &security.FwSecurity{},
+		},
+		Objects: &objs.FwObjs{
+			Services: &srvc.FwSrvc{},
+		},
+	}
+	cfg := &config.Config{Threads: 2, Retry: 5}
+	blendedset := blendedfake.NewSimpleClientset()
 	extensionsClient := extensionsfake.NewSimpleClientset()
 
-	conf := &config.Operator{
-		Host:     "172.22.132.200",
-		Username: "admin",
-		Password: "admin",
+	resources := []customResource{
+		{
+			Name:    "service",
+			Plural:  "services",
+			Kind:    reflect.TypeOf(blendedv1.Service{}).Name(),
+			Group:   blendedv1.CustomResourceGroup,
+			Version: blendedv1.Version,
+			Scope:   apiextensionsv1beta1.ClusterScoped,
+		},
+		{
+			Name:    "security",
+			Plural:  "securities",
+			Kind:    reflect.TypeOf(blendedv1.Security{}).Name(),
+			Group:   blendedv1.CustomResourceGroup,
+			Version: blendedv1.Version,
+			Scope:   apiextensionsv1beta1.NamespaceScoped,
+		},
+		{
+			Name:    "nat",
+			Plural:  "nats",
+			Kind:    reflect.TypeOf(blendedv1.NAT{}).Name(),
+			Group:   blendedv1.CustomResourceGroup,
+			Version: blendedv1.Version,
+			Scope:   apiextensionsv1beta1.NamespaceScoped,
+		},
 	}
-
-	operator := NewMainOperator(conf)
-	operator.ctx = &opkit.Context{
-		Clientset:             coreClient,
-		APIExtensionClientset: extensionsClient,
-		Interval:              500 * time.Millisecond,
-		Timeout:               60 * time.Second,
-	}
-
-	assert.NotNil(t, operator)
-	assert.Equal(t, coreClient, operator.ctx.Clientset)
-	assert.Equal(t, extensionsClient, operator.ctx.APIExtensionClientset)
-
-	for _, res := range operator.resources {
-		assert.Nil(t, createCRD(operator.ctx, res))
+	for _, res := range resources {
+		assert.Nil(t, createCRD(extensionsClient, res))
 	}
 
 	crds, err := extensionsClient.ApiextensionsV1beta1().CustomResourceDefinitions().List(metav1.ListOptions{})
 	assert.Nil(t, err)
-	assert.Equal(t, len(operator.resources), len(crds.Items))
+	assert.Equal(t, len(resources), len(crds.Items))
 
-	for index, crd := range crds.Items {
-		assert.Equal(t, operator.resources[index].Group, crd.Spec.Group)
-		assert.Equal(t, operator.resources[index].Scope, crd.Spec.Scope)
-		assert.Equal(t, operator.resources[index].Name, crd.Spec.Names.Singular)
-		assert.Equal(t, operator.resources[index].Kind, crd.Spec.Names.Kind)
-		assert.Equal(t, operator.resources[index].Plural, crd.Spec.Names.Plural)
-		assert.Equal(t, operator.resources[index].ShortNames, crd.Spec.Names.ShortNames)
-	}
+	op := New(cfg, fw, blendedset)
+	assert.NotNil(t, op)
+	assert.Nil(t, op.Run(ctx))
+
+	cancel()
+	op.Stop()
 }

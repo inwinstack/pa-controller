@@ -15,7 +15,6 @@ Clone repo into your go path under `$GOPATH/src`:
 ```sh
 $ git clone https://github.com/inwinstack/pa-controller.git $GOPATH/src/github.com/inwinstack/pa-controller
 $ cd $GOPATH/src/github.com/inwinstack/pa-controller
-$ make dep
 $ make
 ```
 
