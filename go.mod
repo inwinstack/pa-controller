@@ -1,0 +1,40 @@
+module github.com/inwinstack/pa-controller
+
+go 1.12
+
+require (
+	github.com/davecgh/go-spew v1.1.1
+	github.com/ghodss/yaml v1.0.0
+	github.com/gogo/protobuf v1.2.0
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/golang/protobuf v1.2.0
+	github.com/google/btree v1.0.0
+	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf
+	github.com/googleapis/gnostic v0.2.0
+	github.com/gregjones/httpcache v0.0.0-20181110185634-c63ab54fda8f
+	github.com/hashicorp/golang-lru v0.5.0
+	github.com/imdario/mergo v0.3.6
+	github.com/inwinstack/blended v0.6.0
+	github.com/inwinstack/pango v0.3.1
+	github.com/json-iterator/go v1.1.5
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
+	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742
+	github.com/petar/GoLLRB v0.0.0-20130427215148-53be0d36a84c
+	github.com/peterbourgon/diskv v2.0.1+incompatible
+	github.com/pmezard/go-difflib v1.0.0
+	github.com/spf13/pflag v1.0.3
+	github.com/stretchr/testify v1.3.0
+	github.com/thoas/go-funk v0.0.0-20181015191849-9132db0aefe2
+	golang.org/x/crypto v0.0.0-20190123085648-057139ce5d2b
+	golang.org/x/net v0.0.0-20190119204137-ed066c81e75e
+	golang.org/x/sys v0.0.0-20190123074212-c6b37f3e9285
+	golang.org/x/text v0.3.0
+	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c
+	gopkg.in/inf.v0 v0.9.1
+	gopkg.in/yaml.v2 v2.2.2
+	k8s.io/api v0.0.0-20180628040859-072894a440bd
+	k8s.io/apiextensions-apiserver v0.0.0-20180628053655-3de98c57bc05
+	k8s.io/apimachinery v0.0.0-20180621070125-103fd098999d
+	k8s.io/client-go v8.0.0+incompatible
+	k8s.io/kube-openapi v0.0.0-20190115222348-ced9eb3070a5
+)

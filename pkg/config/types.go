@@ -1,5 +1,5 @@
 /*
-Copyright © 2018 inwinSTACK.inc
+Copyright © 2018 inwinSTACK Inc
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@ limitations under the License.
 
 package config
 
-type Operator struct {
-	Kubeconfig string
-	Interval   int
-	Retry      int
-
-	// PA flags
+// Config contains the operator config
+type Config struct {
+	Threads        int
+	SyncSec        int
+	Retry          int
 	Host           string
 	Username       string
 	Password       string
@@ -30,8 +29,9 @@ type Operator struct {
 	MoveRule       string
 	Vsys           string
 	CommitWaitTime int
-	ForceCommit    bool
-	SyncCommit     bool
+	Admins         []string
 	DaNPartial     bool
 	PaOPartial     bool
+	Force          bool
+	Sync           bool
 }

@@ -1,5 +1,5 @@
 /*
-Copyright © 2018 inwinSTACK.inc
+Copyright © 2018 inwinSTACK Inc
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,16 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package pautil
+package security
 
 import (
-	"github.com/PaloAltoNetworks/pango/objs/srvc"
-	"github.com/PaloAltoNetworks/pango/poli/nat"
-	"github.com/PaloAltoNetworks/pango/poli/security"
-	inwinv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
+	blendedv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
+	"github.com/inwinstack/pango/poli/security"
 )
 
-func ToSecurityEntry(sec *inwinv1.Security) *security.Entry {
+func (c *Controller) newSecurityPolicy(sec *blendedv1.Security) *security.Entry {
 	entry := &security.Entry{
 		Name:                            sec.Name,
 		Type:                            sec.Spec.Type,
@@ -63,49 +61,28 @@ func ToSecurityEntry(sec *inwinv1.Security) *security.Entry {
 	return entry
 }
 
-func ToNatEntry(n *inwinv1.NAT) *nat.Entry {
-	entry := &nat.Entry{
-		Name:                           n.Name,
-		Description:                    n.Spec.Description,
-		Type:                           n.Spec.Type,
-		SourceZones:                    n.Spec.SourceZones,
-		DestinationZone:                n.Spec.DestinationZone,
-		ToInterface:                    n.Spec.ToInterface,
-		Service:                        n.Spec.Service,
-		SourceAddresses:                n.Spec.SourceAddresses,
-		DestinationAddresses:           n.Spec.DestinationAddresses,
-		SatType:                        n.Spec.SatType,
-		SatAddressType:                 n.Spec.SatAddressType,
-		SatTranslatedAddresses:         n.Spec.SatTranslatedAddresses,
-		SatInterface:                   n.Spec.SatInterface,
-		SatIpAddress:                   n.Spec.SatIPAddress,
-		SatFallbackType:                n.Spec.SatFallbackType,
-		SatFallbackTranslatedAddresses: n.Spec.SatFallbackTranslatedAddresses,
-		SatFallbackInterface:           n.Spec.SatFallbackInterface,
-		SatFallbackIpType:              n.Spec.SatFallbackIPType,
-		SatFallbackIpAddress:           n.Spec.SatFallbackIPAddress,
-		SatStaticTranslatedAddress:     n.Spec.SatStaticTranslatedAddress,
-		SatStaticBiDirectional:         n.Spec.SatStaticBiDirectional,
-		DatType:                        n.Spec.DatType,
-		DatAddress:                     n.Spec.DatAddress,
-		DatPort:                        int(n.Spec.DatPort),
-		DatDynamicDistribution:         n.Spec.DatDynamicDistribution,
-		Disabled:                       n.Spec.Disabled,
-		Targets:                        n.Spec.Targets,
-		NegateTarget:                   n.Spec.NegateTarget,
-		Tags:                           n.Spec.Tags,
+func (c *Controller) updateSecurityPolicy(sec *blendedv1.Security) error {
+	entry := c.newSecurityPolicy(sec)
+	if err := c.fwSec.Edit(c.cfg.Vsys, *entry); err != nil {
+		return err
 	}
-	entry.Defaults()
-	return entry
+
+	if err := c.fwSec.MoveGroup(c.cfg.Vsys, c.cfg.MoveType, c.cfg.MoveRule, *entry); err != nil {
+		return err
+	}
+	c.commit <- true
+	return nil
 }
 
-func ToServiceEntry(svc *inwinv1.Service) *srvc.Entry {
-	return &srvc.Entry{
-		Name:            svc.Name,
-		Protocol:        svc.Spec.Protocol,
-		SourcePort:      svc.Spec.SourcePort,
-		DestinationPort: svc.Spec.DestinationPort,
-		Description:     svc.Spec.Description,
-		Tags:            svc.Spec.Tags,
+func (c *Controller) deleteSecurityPolicy(sec *blendedv1.Security) error {
+	enrty, err := c.fwSec.Get(c.cfg.Vsys, sec.Name)
+	if len(enrty.Name) == 0 && err != nil {
+		return nil
 	}
+
+	if err := c.fwSec.Delete(c.cfg.Vsys, sec.Name); err != nil {
+		return err
+	}
+	c.commit <- true
+	return nil
 }

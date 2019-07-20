@@ -8,6 +8,8 @@ spec:
   selector:
     matchLabels:
       k8s-app: pa-controller
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -22,13 +24,12 @@ spec:
       serviceAccountName: pa-controller
       containers:
       - name: pa-controller
-        image: inwinstack/pa-controller:v0.6.1
+        image: inwinstack/pa-controller:v0.7.0
         args:
         - --logtostderr=true
         - --v=2
-        - --host=172.22.132.114
-        - --username=admin
-        - --password=admin
+        - --host=172.22.126.27
+        - --username=api
+        - --password=r00tme
+        - --commit-admins=api
         - --commit-wait-time=2
-        - --commit-retry=5
-        - --check-failed-interval=30

@@ -1,5 +1,5 @@
 /*
-Copyright © 2018 inwinSTACK.inc
+Copyright © 2018 inwinSTACK Inc
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,139 +17,50 @@ limitations under the License.
 package operator
 
 import (
+	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
-	"github.com/golang/glog"
-	clientset "github.com/inwinstack/blended/client/clientset/versioned"
-	opkit "github.com/inwinstack/operator-kit"
+	blended "github.com/inwinstack/blended/client/clientset/versioned"
+	blendedinformers "github.com/inwinstack/blended/client/informers/externalversions"
 	"github.com/inwinstack/pa-controller/pkg/config"
-	"github.com/inwinstack/pa-controller/pkg/k8sutil"
-	"github.com/inwinstack/pa-controller/pkg/operator/pa"
-	"github.com/inwinstack/pa-controller/pkg/operator/pa/nat"
-	"github.com/inwinstack/pa-controller/pkg/operator/pa/security"
-	"github.com/inwinstack/pa-controller/pkg/operator/pa/service"
-	v1 "k8s.io/api/core/v1"
-
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	"k8s.io/client-go/kubernetes"
+	"github.com/inwinstack/pa-controller/pkg/operator/pan"
+	"github.com/inwinstack/pango"
 )
 
-const (
-	initRetryDelay = 10 * time.Second
-	interval       = 500 * time.Millisecond
-	timeout        = 60 * time.Second
-)
+const defaultSyncTime = time.Second * 30
 
+// Operator represents an operator context
 type Operator struct {
-	ctx        *opkit.Context
-	conf       *config.Operator
-	resources  []opkit.CustomResource
-	controller *pa.Controller
+	clientset      blended.Interface
+	informer       blendedinformers.SharedInformerFactory
+	cfg            *config.Config
+	mainController *pan.Controller
 }
 
-func NewMainOperator(conf *config.Operator) *Operator {
-	return &Operator{
-		resources: []opkit.CustomResource{
-			nat.Resource,
-			security.Resource,
-			service.Resource,
-		},
-		conf: conf,
+// New creates an instance of the operator
+func New(cfg *config.Config, fw *pango.Firewall, clientset blended.Interface) *Operator {
+	t := defaultSyncTime
+	if cfg.SyncSec > 0 {
+		t = time.Second * time.Duration(cfg.SyncSec)
 	}
+
+	o := &Operator{cfg: cfg, clientset: clientset}
+	o.informer = blendedinformers.NewSharedInformerFactory(clientset, t)
+	o.mainController = pan.NewController(cfg, fw, clientset, o.informer)
+	return o
 }
 
-func (o *Operator) Initialize() error {
-	glog.V(2).Info("Initialize the operator resources.")
-
-	ctx, blendedClient, err := o.initContextAndClient()
-	if err != nil {
-		return err
-	}
-
-	o.controller = pa.NewController(ctx, blendedClient, o.conf)
-	o.ctx = ctx
-	return nil
-}
-
-func (o *Operator) initContextAndClient() (*opkit.Context, clientset.Interface, error) {
-	glog.V(2).Info("Initialize the operator context and client.")
-
-	config, err := k8sutil.GetRestConfig(o.conf.Kubeconfig)
-	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to get Kubernetes config. %+v", err)
-	}
-
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to get Kubernetes client. %+v", err)
-	}
-
-	extensionsClient, err := apiextensionsclientset.NewForConfig(config)
-	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to create Kubernetes API extension clientset. %+v", err)
-	}
-
-	blendedClient, err := clientset.NewForConfig(config)
-	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to create blended clientset. %+v", err)
-	}
-
-	ctx := &opkit.Context{
-		Clientset:             client,
-		APIExtensionClientset: extensionsClient,
-		Interval:              interval,
-		Timeout:               timeout,
-	}
-	return ctx, blendedClient, nil
-}
-
-func (o *Operator) initResources() error {
-	glog.V(2).Info("Initialize the CRD resources.")
-
-	ctx := opkit.Context{
-		Clientset:             o.ctx.Clientset,
-		APIExtensionClientset: o.ctx.APIExtensionClientset,
-		Interval:              interval,
-		Timeout:               timeout,
-	}
-
-	if err := opkit.CreateCustomResources(ctx, o.resources); err != nil {
-		return fmt.Errorf("Failed to create custom resource. %+v", err)
+// Run serves an isntance of the operator
+func (o *Operator) Run(ctx context.Context) error {
+	go o.informer.Start(ctx.Done())
+	if err := o.mainController.Run(ctx, o.cfg.Threads); err != nil {
+		return fmt.Errorf("failed to run main controller: %s", err.Error())
 	}
 	return nil
 }
 
-func (o *Operator) Run() error {
-	for {
-		err := o.initResources()
-		if err == nil {
-			break
-		}
-		glog.Errorf("Failed to init resources. %+v. retrying...", err)
-		<-time.After(initRetryDelay)
-	}
-
-	signalChan := make(chan os.Signal, 1)
-	stopChan := make(chan struct{})
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
-
-	if err := o.controller.Initialize(); err != nil {
-		return fmt.Errorf("Failed to init PA controller. %+v", err)
-	}
-
-	// start watching the resources
-	o.controller.StartWatch(v1.NamespaceAll, stopChan)
-
-	for {
-		select {
-		case <-signalChan:
-			glog.Infof("Shutdown signal received, exiting...")
-			close(stopChan)
-			return nil
-		}
-	}
+// Stop stops the main controller
+func (o *Operator) Stop() {
+	o.mainController.Stop()
 }
