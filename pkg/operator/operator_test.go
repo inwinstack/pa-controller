@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	blendedv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
-	blendedfake "github.com/inwinstack/blended/client/clientset/versioned/fake"
+	blendedfake "github.com/inwinstack/blended/generated/clientset/versioned/fake"
 	"github.com/inwinstack/pa-controller/pkg/config"
 	"github.com/inwinstack/pango"
 	"github.com/inwinstack/pango/objs"

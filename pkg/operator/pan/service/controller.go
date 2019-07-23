@@ -21,15 +21,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/golang/glog"
 	blendedv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
-	blended "github.com/inwinstack/blended/client/clientset/versioned"
-	informerv1 "github.com/inwinstack/blended/client/informers/externalversions/inwinstack/v1"
-	listerv1 "github.com/inwinstack/blended/client/listers/inwinstack/v1"
+	"github.com/inwinstack/blended/constants"
+	blended "github.com/inwinstack/blended/generated/clientset/versioned"
+	informerv1 "github.com/inwinstack/blended/generated/informers/externalversions/inwinstack/v1"
+	listerv1 "github.com/inwinstack/blended/generated/listers/inwinstack/v1"
+	"github.com/inwinstack/blended/k8sutil"
+	"github.com/inwinstack/blended/util"
 	"github.com/inwinstack/pa-controller/pkg/config"
-	"github.com/inwinstack/pa-controller/pkg/constants"
-	"github.com/inwinstack/pa-controller/pkg/k8sutil"
-	"github.com/inwinstack/pa-controller/pkg/util"
 	"github.com/inwinstack/pango/objs/srvc"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -153,7 +155,7 @@ func (c *Controller) reconcile(key string) error {
 		return err
 	}
 
-	svc, err := c.lister.Get(name)
+	service, err := c.lister.Get(name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			utilruntime.HandleError(fmt.Errorf("service '%s' in work queue no longer exists", key))
@@ -162,23 +164,39 @@ func (c *Controller) reconcile(key string) error {
 		return err
 	}
 
-	if !svc.ObjectMeta.DeletionTimestamp.IsZero() {
-		if err := c.cleanup(svc); err != nil {
+	if !service.ObjectMeta.DeletionTimestamp.IsZero() {
+		if err := c.cleanup(service); err != nil {
 			return err
 		}
 		return nil
 	}
 
-	need := k8sutil.IsNeedToUpdate(svc.ObjectMeta)
-	if svc.Status.Phase != blendedv1.ServiceActive || need {
-		if svc.Status.Phase == blendedv1.ServiceFailed {
-			t := util.SubtractNowTime(svc.Status.LastUpdateTime.Time)
+	if err := c.checkAndUdateFinalizer(service); err != nil {
+		return err
+	}
+
+	need := k8sutil.IsNeedToUpdate(service.ObjectMeta)
+	if service.Status.Phase != blendedv1.ServiceActive || need {
+		if service.Status.Phase == blendedv1.ServiceFailed {
+			t := util.SubtractNowTime(service.Status.LastUpdateTime.Time)
 			if t.Seconds() <= float64(c.cfg.SyncSec) && !need {
 				return nil
 			}
 		}
-		if err := c.createOrUpdate(svc); err != nil {
-			return c.makeFailed(svc, err)
+		if err := c.createOrUpdate(service); err != nil {
+			return c.makeFailed(service, err)
+		}
+	}
+	return nil
+}
+
+func (c *Controller) checkAndUdateFinalizer(svc *blendedv1.Service) error {
+	svcCopy := svc.DeepCopy()
+	ok := funk.ContainsString(svcCopy.Finalizers, constants.CustomFinalizer)
+	if svc.Status.Phase == blendedv1.ServiceActive && !ok {
+		k8sutil.AddFinalizer(&svcCopy.ObjectMeta, constants.CustomFinalizer)
+		if _, err := c.blendedset.InwinstackV1().Services().Update(svcCopy); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -221,6 +239,7 @@ func (c *Controller) cleanup(svc *blendedv1.Service) error {
 	}
 
 	k8sutil.RemoveFinalizer(&svcCopy.ObjectMeta, constants.CustomFinalizer)
+	svcCopy.Status.Phase = blendedv1.ServiceTerminating
 	if _, err := c.blendedset.InwinstackV1().Services().Update(svcCopy); err != nil {
 		return err
 	}

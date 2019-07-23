@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"time"
 
-	blended "github.com/inwinstack/blended/client/clientset/versioned"
-	blendedinformers "github.com/inwinstack/blended/client/informers/externalversions"
+	blended "github.com/inwinstack/blended/generated/clientset/versioned"
+	blendedinformers "github.com/inwinstack/blended/generated/informers/externalversions"
 	"github.com/inwinstack/pa-controller/pkg/config"
 	"github.com/inwinstack/pa-controller/pkg/operator/pan"
 	"github.com/inwinstack/pango"
@@ -41,7 +41,7 @@ type Operator struct {
 // New creates an instance of the operator
 func New(cfg *config.Config, fw *pango.Firewall, clientset blended.Interface) *Operator {
 	t := defaultSyncTime
-	if cfg.SyncSec > 0 {
+	if cfg.SyncSec > 30 {
 		t = time.Second * time.Duration(cfg.SyncSec)
 	}
 

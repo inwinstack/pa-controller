@@ -20,8 +20,8 @@ import (
 	"context"
 	"testing"
 
-	blendedfake "github.com/inwinstack/blended/client/clientset/versioned/fake"
-	blendedinformers "github.com/inwinstack/blended/client/informers/externalversions"
+	blendedfake "github.com/inwinstack/blended/generated/clientset/versioned/fake"
+	blendedinformers "github.com/inwinstack/blended/generated/informers/externalversions"
 	"github.com/inwinstack/pa-controller/pkg/config"
 	"github.com/inwinstack/pango"
 	"github.com/inwinstack/pango/objs"
