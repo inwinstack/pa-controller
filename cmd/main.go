@@ -26,7 +26,7 @@ import (
 	"syscall"
 
 	"github.com/golang/glog"
-	blended "github.com/inwinstack/blended/client/clientset/versioned"
+	blendedset "github.com/inwinstack/blended/generated/clientset/versioned"
 	"github.com/inwinstack/pa-controller/pkg/config"
 	palog "github.com/inwinstack/pa-controller/pkg/log"
 	"github.com/inwinstack/pa-controller/pkg/operator"
@@ -114,7 +114,7 @@ func main() {
 		glog.Fatalf("Error to build kubeconfig: %s", err.Error())
 	}
 
-	blendedclient, err := blended.NewForConfig(k8scfg)
+	blendedclient, err := blendedset.NewForConfig(k8scfg)
 	if err != nil {
 		glog.Fatalf("Error to build Blended client: %s", err.Error())
 	}

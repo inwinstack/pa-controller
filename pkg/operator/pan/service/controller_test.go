@@ -22,10 +22,10 @@ import (
 	"time"
 
 	blendedv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
-	blendedfake "github.com/inwinstack/blended/client/clientset/versioned/fake"
-	blendedinformers "github.com/inwinstack/blended/client/informers/externalversions"
+	blendedfake "github.com/inwinstack/blended/generated/clientset/versioned/fake"
+	blendedinformers "github.com/inwinstack/blended/generated/informers/externalversions"
 	"github.com/inwinstack/pa-controller/pkg/config"
-	"github.com/inwinstack/pa-controller/pkg/constants"
+	"github.com/inwinstack/blended/constants"
 	"github.com/inwinstack/pango/objs/srvc"
 	"github.com/inwinstack/pango/testdata"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

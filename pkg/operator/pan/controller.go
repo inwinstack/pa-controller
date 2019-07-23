@@ -22,13 +22,13 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	blended "github.com/inwinstack/blended/client/clientset/versioned"
-	blendedinformers "github.com/inwinstack/blended/client/informers/externalversions"
+	blended "github.com/inwinstack/blended/generated/clientset/versioned"
+	blendedinformers "github.com/inwinstack/blended/generated/informers/externalversions"
+	"github.com/inwinstack/blended/util"
 	"github.com/inwinstack/pa-controller/pkg/config"
 	"github.com/inwinstack/pa-controller/pkg/operator/pan/nat"
 	"github.com/inwinstack/pa-controller/pkg/operator/pan/security"
 	"github.com/inwinstack/pa-controller/pkg/operator/pan/service"
-	"github.com/inwinstack/pa-controller/pkg/util"
 	"github.com/inwinstack/pango"
 )
 
