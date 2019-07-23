@@ -41,7 +41,7 @@ type Operator struct {
 // New creates an instance of the operator
 func New(cfg *config.Config, fw *pango.Firewall, clientset blended.Interface) *Operator {
 	t := defaultSyncTime
-	if cfg.SyncSec > 0 {
+	if cfg.SyncSec > 30 {
 		t = time.Second * time.Duration(cfg.SyncSec)
 	}
 

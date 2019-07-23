@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/golang/glog"
 	blendedv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
 	"github.com/inwinstack/blended/constants"
@@ -169,6 +171,10 @@ func (c *Controller) reconcile(key string) error {
 		return nil
 	}
 
+	if err := c.checkAndUdateFinalizer(nat); err != nil {
+		return err
+	}
+
 	need := k8sutil.IsNeedToUpdate(nat.ObjectMeta)
 	if nat.Status.Phase != blendedv1.NATActive || need {
 		if nat.Status.Phase == blendedv1.NATFailed {
@@ -179,6 +185,18 @@ func (c *Controller) reconcile(key string) error {
 		}
 		if err := c.createOrUpdate(nat); err != nil {
 			return c.makeFailed(nat, err)
+		}
+	}
+	return nil
+}
+
+func (c *Controller) checkAndUdateFinalizer(nat *blendedv1.NAT) error {
+	natCopy := nat.DeepCopy()
+	ok := funk.ContainsString(natCopy.Finalizers, constants.CustomFinalizer)
+	if natCopy.Status.Phase == blendedv1.NATActive && !ok {
+		k8sutil.AddFinalizer(&natCopy.ObjectMeta, constants.CustomFinalizer)
+		if _, err := c.blendedset.InwinstackV1().NATs(natCopy.Namespace).Update(natCopy); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -221,6 +239,7 @@ func (c *Controller) cleanup(nat *blendedv1.NAT) error {
 	}
 
 	k8sutil.RemoveFinalizer(&natCopy.ObjectMeta, constants.CustomFinalizer)
+	natCopy.Status.Phase = blendedv1.NATTerminating
 	if _, err := c.blendedset.InwinstackV1().NATs(natCopy.Namespace).Update(natCopy); err != nil {
 		return err
 	}

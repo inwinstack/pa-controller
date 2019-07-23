@@ -32,4 +32,3 @@ spec:
         - --username=api
         - --password=r00tme
         - --commit-admins=api
-        - --commit-wait-time=2

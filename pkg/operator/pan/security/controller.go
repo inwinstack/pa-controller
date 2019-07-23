@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/golang/glog"
 	blendedv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
 	"github.com/inwinstack/blended/constants"
@@ -168,6 +170,10 @@ func (c *Controller) reconcile(key string) error {
 		return nil
 	}
 
+	if err := c.checkAndUdateFinalizer(security); err != nil {
+		return err
+	}
+
 	need := k8sutil.IsNeedToUpdate(security.ObjectMeta)
 	if security.Status.Phase != blendedv1.SecurityActive || need {
 		if security.Status.Phase == blendedv1.SecurityFailed {
@@ -178,6 +184,18 @@ func (c *Controller) reconcile(key string) error {
 		}
 		if err := c.createOrUpdate(security); err != nil {
 			return c.makeFailed(security, err)
+		}
+	}
+	return nil
+}
+
+func (c *Controller) checkAndUdateFinalizer(sec *blendedv1.Security) error {
+	secCopy := sec.DeepCopy()
+	ok := funk.ContainsString(secCopy.Finalizers, constants.CustomFinalizer)
+	if secCopy.Status.Phase == blendedv1.SecurityActive && !ok {
+		k8sutil.AddFinalizer(&secCopy.ObjectMeta, constants.CustomFinalizer)
+		if _, err := c.blendedset.InwinstackV1().Securities(secCopy.Namespace).Update(secCopy); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -220,6 +238,7 @@ func (c *Controller) cleanup(sec *blendedv1.Security) error {
 	}
 
 	k8sutil.RemoveFinalizer(&secCopy.ObjectMeta, constants.CustomFinalizer)
+	secCopy.Status.Phase = blendedv1.SecurityTerminating
 	if _, err := c.blendedset.InwinstackV1().Securities(secCopy.Namespace).Update(secCopy); err != nil {
 		return err
 	}
