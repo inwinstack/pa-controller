@@ -28,6 +28,7 @@ import (
 	"github.com/golang/glog"
 	blendedset "github.com/inwinstack/blended/generated/clientset/versioned"
 	"github.com/inwinstack/pa-controller/pkg/config"
+	"github.com/inwinstack/pa-controller/pkg/ha"
 	palog "github.com/inwinstack/pa-controller/pkg/log"
 	"github.com/inwinstack/pa-controller/pkg/operator"
 	"github.com/inwinstack/pa-controller/pkg/version"
@@ -38,16 +39,18 @@ import (
 )
 
 var (
-	cfg        = &config.Config{}
-	kubeconfig string
-	ver        bool
+	cfg             = &config.Config{}
+	kubeconfig      string
+	haMode          bool
+	inspectorSecond int
+	ver             bool
 )
 
 func parserFlags() {
 	flag.StringVarP(&kubeconfig, "kubeconfig", "", "", "Absolute path to the kubeconfig file.")
 	flag.IntVarP(&cfg.Threads, "threads", "", 2, "Number of worker threads used by the controller.")
-	flag.IntVarP(&cfg.SyncSec, "sync-seconds", "", 30, "Seconds for syncing and retrying objects.")
-	flag.StringVarP(&cfg.Host, "host", "", "", "The API host address of Palo Alto firewall.")
+	flag.IntVarP(&cfg.SyncSec, "sync-seconds", "", 60, "Seconds for syncing and retrying objects.")
+	flag.StringVarP(&cfg.Host, "host", "", "", "The address of host for the Palo Alto firewall.")
 	flag.StringVarP(&cfg.Username, "username", "", "", "The API username of Palo Alto firewall.")
 	flag.StringVarP(&cfg.Password, "password", "", "", "The API password of Palo Alto firewall .")
 	flag.StringVarP(&cfg.APIKey, "api-key", "", "", "the API key of Palo Alto firewall .")
@@ -61,6 +64,8 @@ func parserFlags() {
 	flag.BoolVarP(&cfg.Sync, "sync-commit", "", false, "Flag sync-commit should be true if you want this function to block until the commit job completes.")
 	flag.BoolVarP(&cfg.DaNPartial, "dan-partial", "", false, "Flag dan-partial is an advanced option for doing the partial commit for the device and network configuration.")
 	flag.BoolVarP(&cfg.PaOPartial, "pao-partial", "", true, "Flag pao-partial is an advanced option for doing the partial commit for the policy and object configuration.")
+	flag.BoolVarP(&haMode, "ha", "", false, "Flag ha is an advanced option for enabling high-availability mode.")
+	flag.IntVarP(&inspectorSecond, "inspector-seconds", "", 30, "Seconds for checking the high-availability status of PAN.")
 	flag.BoolVarP(&ver, "version", "", false, "Display the version.")
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	flag.Parse()
@@ -124,8 +129,41 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	op := operator.New(cfg, fw, blendedclient)
-	if err := op.Run(ctx); err != nil {
-		glog.Fatalf("Error to serve the operator instance: %s.", err)
+
+	switch haMode {
+	case true:
+		active := false
+		callbacks := &ha.Callbacks{
+			OnActive: func() {
+				glog.V(3).Infof("PAN firewall on Active.")
+				if !active {
+					if err := op.Run(ctx); err != nil {
+						glog.Fatalf("Error to run the operator: %s.", err)
+					}
+					active = true
+				}
+			},
+			OnPassive: func() {
+				glog.V(3).Infof("PAN firewall on Passive.")
+				if active {
+					op.Stop()
+					active = false
+				}
+			},
+			OnFail: func(err error) {
+				op.Stop()
+				glog.Errorf("Error to get HA status: %s.", err)
+			},
+		}
+
+		inspector := ha.NewInspector(fw, inspectorSecond, callbacks)
+		if err := inspector.Run(ctx); err != nil {
+			glog.Fatalf("Error to run the operator: %s.", err)
+		}
+	case false:
+		if err := op.Run(ctx); err != nil {
+			glog.Fatalf("Error to serve the operator instance: %s.", err)
+		}
 	}
 
 	<-signalChan
