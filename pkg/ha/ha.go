@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/inwinstack/pango"
+	"github.com/inwinstack/pango/util"
 )
 
 const defaultSyncSecond = time.Second * 30
@@ -32,12 +32,12 @@ type Callbacks struct {
 }
 
 type Inspector struct {
-	fw        *pango.Firewall
+	fw        util.XapiClient
 	callbacks *Callbacks
 	duration  time.Duration
 }
 
-func NewInspector(fw *pango.Firewall, duration int, callbacks *Callbacks) *Inspector {
+func NewInspector(fw util.XapiClient, duration int, callbacks *Callbacks) *Inspector {
 	syncSecond := defaultSyncSecond
 	if duration > 30 {
 		syncSecond = time.Second * time.Duration(duration)
@@ -68,7 +68,7 @@ func (i *Inspector) getStatus() error {
 		switch status.Group.Local.State {
 		case "active":
 			i.callbacks.OnActive()
-		case "passive":
+		default:
 			i.callbacks.OnPassive()
 		}
 	}

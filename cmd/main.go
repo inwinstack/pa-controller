@@ -124,14 +124,12 @@ func main() {
 		glog.Fatalf("Error to build Blended client: %s", err.Error())
 	}
 
+	op := operator.New(cfg, fw, blendedclient)
 	ctx, cancel := context.WithCancel(context.Background())
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
-	op := operator.New(cfg, fw, blendedclient)
-
-	switch haMode {
-	case true:
+	if haMode {
 		active := false
 		callbacks := &ha.Callbacks{
 			OnActive: func() {
@@ -148,19 +146,19 @@ func main() {
 				if active {
 					op.Stop()
 					active = false
+					glog.Fatalf("Active state lost, exiting...")
 				}
 			},
 			OnFail: func(err error) {
 				op.Stop()
-				glog.Errorf("Error to get HA status: %s.", err)
+				glog.Fatalf("Error to get HA status: %s.", err)
 			},
 		}
-
 		inspector := ha.NewInspector(fw, inspectorSecond, callbacks)
 		if err := inspector.Run(ctx); err != nil {
 			glog.Fatalf("Error to run the operator: %s.", err)
 		}
-	case false:
+	} else {
 		if err := op.Run(ctx); err != nil {
 			glog.Fatalf("Error to serve the operator instance: %s.", err)
 		}
