@@ -9,7 +9,6 @@ go_import_path: github.com/inwinstack/pa-controller
 env:
 - GO111MODULE=on
 script:
-- go mod download
 - make test
 - make
 after_success:
