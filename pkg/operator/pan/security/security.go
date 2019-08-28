@@ -61,6 +61,15 @@ func (c *Controller) newSecurityPolicy(sec *blendedv1.Security) *security.Entry 
 	return entry
 }
 
+func (c *Controller) isExistingSecurityPolicy(sec *blendedv1.Security) bool {
+	if entry, err := c.fwSec.Get(c.cfg.Vsys, sec.Name); err == nil {
+		if len(entry.Name) != 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *Controller) updateSecurityPolicy(sec *blendedv1.Security) error {
 	entry := c.newSecurityPolicy(sec)
 	if err := c.fwSec.Edit(c.cfg.Vsys, *entry); err != nil {
@@ -75,8 +84,7 @@ func (c *Controller) updateSecurityPolicy(sec *blendedv1.Security) error {
 }
 
 func (c *Controller) deleteSecurityPolicy(sec *blendedv1.Security) error {
-	enrty, err := c.fwSec.Get(c.cfg.Vsys, sec.Name)
-	if len(enrty.Name) == 0 && err != nil {
+	if !c.isExistingSecurityPolicy(sec) {
 		return nil
 	}
 

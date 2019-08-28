@@ -186,6 +186,13 @@ func (c *Controller) reconcile(key string) error {
 		if err := c.createOrUpdate(nat); err != nil {
 			return c.makeFailed(nat, err)
 		}
+		return nil
+	}
+
+	if nat.Status.Phase == blendedv1.NATActive && !c.isExistingNatPolicy(nat) {
+		if err := c.createOrUpdate(nat); err != nil {
+			return c.makeFailed(nat, err)
+		}
 	}
 	return nil
 }

@@ -57,6 +57,15 @@ func (c *Controller) newNatPolicy(n *blendedv1.NAT) *nat.Entry {
 	return entry
 }
 
+func (c *Controller) isExistingNatPolicy(nat *blendedv1.NAT) bool {
+	if entry, err := c.fwNat.Get(c.cfg.Vsys, nat.Name); err == nil {
+		if len(entry.Name) != 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *Controller) updateNatPolicy(nat *blendedv1.NAT) error {
 	entry := c.newNatPolicy(nat)
 	if err := c.fwNat.Edit(c.cfg.Vsys, *entry); err != nil {
@@ -67,8 +76,7 @@ func (c *Controller) updateNatPolicy(nat *blendedv1.NAT) error {
 }
 
 func (c *Controller) deleteNatPolicy(nat *blendedv1.NAT) error {
-	enrty, err := c.fwNat.Get(c.cfg.Vsys, nat.Name)
-	if len(enrty.Name) == 0 && err != nil {
+	if !c.isExistingNatPolicy(nat) {
 		return nil
 	}
 

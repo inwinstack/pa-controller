@@ -32,6 +32,15 @@ func (c *Controller) newServiceObject(svc *blendedv1.Service) *srvc.Entry {
 	}
 }
 
+func (c *Controller) isExistingServiceObject(svc *blendedv1.Service) bool {
+	if entry, err := c.srvc.Get(c.cfg.Vsys, svc.Name); err == nil {
+		if len(entry.Name) != 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *Controller) updateServiceObject(svc *blendedv1.Service) error {
 	entry := c.newServiceObject(svc)
 	if err := c.srvc.Edit(c.cfg.Vsys, *entry); err != nil {
@@ -42,8 +51,7 @@ func (c *Controller) updateServiceObject(svc *blendedv1.Service) error {
 }
 
 func (c *Controller) deleteServiceObject(svc *blendedv1.Service) error {
-	enrty, err := c.srvc.Get(c.cfg.Vsys, svc.Name)
-	if len(enrty.Name) == 0 && err != nil {
+	if !c.isExistingServiceObject(svc) {
 		return nil
 	}
 

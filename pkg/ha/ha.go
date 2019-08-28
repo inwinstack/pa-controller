@@ -65,8 +65,8 @@ func (i *Inspector) getStatus() error {
 	}
 
 	if status.Enable == "yes" {
-		switch status.Group.Local.State {
-		case "active":
+		switch {
+		case status.Group.Local.State == "active" && status.Group.Local.StateSync == "Complete":
 			i.callbacks.OnActive()
 		default:
 			i.callbacks.OnPassive()

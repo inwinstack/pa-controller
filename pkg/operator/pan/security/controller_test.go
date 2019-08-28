@@ -18,7 +18,6 @@ package security
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -109,28 +108,6 @@ func TestSecurityController(t *testing.T) {
 		}
 	}
 	assert.Equal(t, false, failed, "The security policy hasn't created.")
-
-	gsec2, err := blendedset.InwinstackV1().Securities(namespace).Get(sec.Name, metav1.GetOptions{})
-	assert.Nil(t, err)
-
-	mc.Reset()
-	mc.AddResp("")
-	gsec2.Spec.DestinationAddresses = []string{"140.23.110.12"}
-	usec, err := blendedset.InwinstackV1().Securities(namespace).Update(gsec2)
-	assert.Nil(t, err)
-
-	failed = true
-	for start := time.Now(); time.Since(start) < timeout; {
-		mc.AddResp(mc.Elm)
-		enrty, err := fwSec.Get(cfg.Vsys, usec.Name)
-		assert.Nil(t, err)
-		if reflect.DeepEqual(usec.Spec.DestinationAddresses, enrty.DestinationAddresses) {
-			failed = false
-			break
-		}
-	}
-	assert.Equal(t, false, failed, "The security policy hasn't synced.")
-
 	assert.Nil(t, blendedset.InwinstackV1().Securities(namespace).Delete(sec.Name, nil))
 	secList, err := blendedset.InwinstackV1().Securities(namespace).List(metav1.ListOptions{})
 	assert.Nil(t, err)
