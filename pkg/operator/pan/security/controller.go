@@ -185,6 +185,13 @@ func (c *Controller) reconcile(key string) error {
 		if err := c.createOrUpdate(security); err != nil {
 			return c.makeFailed(security, err)
 		}
+		return nil
+	}
+
+	if security.Status.Phase == blendedv1.SecurityActive && !c.isExistingSecurityPolicy(security) {
+		if err := c.createOrUpdate(security); err != nil {
+			return c.makeFailed(security, err)
+		}
 	}
 	return nil
 }

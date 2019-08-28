@@ -186,6 +186,13 @@ func (c *Controller) reconcile(key string) error {
 		if err := c.createOrUpdate(service); err != nil {
 			return c.makeFailed(service, err)
 		}
+		return nil
+	}
+
+	if service.Status.Phase == blendedv1.ServiceActive && !c.isExistingServiceObject(service) {
+		if err := c.createOrUpdate(service); err != nil {
+			return c.makeFailed(service, err)
+		}
 	}
 	return nil
 }
