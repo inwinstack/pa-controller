@@ -22,10 +22,10 @@ import (
 	"time"
 
 	blendedv1 "github.com/inwinstack/blended/apis/inwinstack/v1"
+	"github.com/inwinstack/blended/constants"
 	blendedfake "github.com/inwinstack/blended/generated/clientset/versioned/fake"
 	blendedinformers "github.com/inwinstack/blended/generated/informers/externalversions"
 	"github.com/inwinstack/pa-controller/pkg/config"
-	"github.com/inwinstack/blended/constants"
 	"github.com/inwinstack/pango/objs/srvc"
 	"github.com/inwinstack/pango/testdata"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,28 +99,6 @@ func TestServiceController(t *testing.T) {
 		}
 	}
 	assert.Equal(t, false, failed, "The service object hasn't created.")
-
-	gsvc2, err := blendedset.InwinstackV1().Services().Get(svc.Name, metav1.GetOptions{})
-	assert.Nil(t, err)
-
-	mc.Reset()
-	mc.AddResp("")
-	gsvc2.Spec.DestinationPort = "9999"
-	usvc, err := blendedset.InwinstackV1().Services().Update(gsvc2)
-	assert.Nil(t, err)
-
-	failed = true
-	for start := time.Now(); time.Since(start) < timeout; {
-		mc.AddResp(mc.Elm)
-		enrty, err := fwSrvc.Get(cfg.Vsys, usvc.Name)
-		assert.Nil(t, err)
-		if usvc.Spec.DestinationPort == enrty.DestinationPort {
-			failed = false
-			break
-		}
-	}
-	assert.Equal(t, false, failed, "The service object hasn't synced.")
-
 	assert.Nil(t, blendedset.InwinstackV1().Services().Delete(svc.Name, nil))
 	svcList, err := blendedset.InwinstackV1().Services().List(metav1.ListOptions{})
 	assert.Nil(t, err)

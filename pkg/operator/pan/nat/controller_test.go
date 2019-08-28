@@ -18,7 +18,6 @@ package nat
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
@@ -107,28 +106,6 @@ func TestNATController(t *testing.T) {
 		}
 	}
 	assert.Equal(t, false, failed, "The nat policy hasn't created.")
-
-	gnat, err := blendedset.InwinstackV1().NATs(namespace).Get(nat.Name, metav1.GetOptions{})
-	assert.Nil(t, err)
-
-	mc.Reset()
-	mc.AddResp("")
-	gnat.Spec.DestinationAddresses = []string{"140.23.110.10", "140.23.110.11"}
-	unat, err := blendedset.InwinstackV1().NATs(namespace).Update(gnat)
-	assert.Nil(t, err)
-
-	failed = true
-	for start := time.Now(); time.Since(start) < timeout; {
-		mc.AddResp(mc.Elm)
-		enrty, err := fwNat.Get(cfg.Vsys, unat.Name)
-		assert.Nil(t, err)
-		if reflect.DeepEqual(unat.Spec.DestinationAddresses, enrty.DestinationAddresses) {
-			failed = false
-			break
-		}
-	}
-	assert.Equal(t, false, failed, "The nat policy hasn't synced.")
-
 	assert.Nil(t, blendedset.InwinstackV1().NATs(namespace).Delete(nat.Name, nil))
 	natList, err := blendedset.InwinstackV1().NATs(namespace).List(metav1.ListOptions{})
 	assert.Nil(t, err)
