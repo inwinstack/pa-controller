@@ -33,6 +33,7 @@ import (
 	"github.com/inwinstack/pa-controller/pkg/operator"
 	"github.com/inwinstack/pa-controller/pkg/version"
 	"github.com/inwinstack/pango"
+	"github.com/inwinstack/pango/util"
 	flag "github.com/spf13/pflag"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -132,17 +133,24 @@ func main() {
 	if haMode {
 		active := false
 		callbacks := &ha.Callbacks{
-			OnActive: func() {
-				glog.V(3).Infof("PAN firewall on Active.")
-				if !active {
-					if err := op.Run(ctx); err != nil {
-						glog.Fatalf("Error to run the operator: %s.", err)
+			OnActive: func(status *util.HighAvailability) {
+				switch {
+				case status.Group.Local.StateSync == "Complete":
+					if status.Group.RunningSyncEnabled == "yes" && status.Group.RunningSync == "synchronized" {
+						glog.V(3).Infof("PAN firewall on active, and synchronized.")
+						if !active {
+							if err := op.Run(ctx); err != nil {
+								glog.Fatalf("Error to run the operator: %s.", err)
+							}
+							active = true
+						}
 					}
-					active = true
+				default:
+					glog.V(3).Infof("PAN firewall on active, but not synchronized.")
 				}
 			},
 			OnPassive: func() {
-				glog.V(3).Infof("PAN firewall on Passive.")
+				glog.V(3).Infof("PAN firewall on passive.")
 				if active {
 					op.Stop()
 					active = false
