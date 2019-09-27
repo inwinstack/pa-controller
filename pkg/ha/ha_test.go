@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/inwinstack/pango/testdata"
+	"github.com/inwinstack/pango/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +31,7 @@ func TestHAInspector(t *testing.T) {
 	mc := &testdata.MockClient{}
 
 	callbacks := &Callbacks{
-		OnActive: func() {
+		OnActive: func(status *util.HighAvailability) {
 			ch <- true
 		},
 		OnPassive: func() {

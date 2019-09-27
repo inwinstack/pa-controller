@@ -78,8 +78,8 @@ github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJ
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/inwinstack/blended v0.7.0 h1:fA5Kb7mxTabBb3KuNYc/7MsmQQ/Uw+A0ihSMFZvbD6E=
 github.com/inwinstack/blended v0.7.0/go.mod h1:tyTgnHheUc/u3s+dWDzMcA9mkIfldHBvFajEKN8nbjk=
-github.com/inwinstack/pango v0.4.1 h1:vGWrOjNUnCyY5ijCc3Ly65BbGIoiS7mCSzyQ35flBtk=
-github.com/inwinstack/pango v0.4.1/go.mod h1:L0/TRNJ5ETQEBckTbsp3dopmfttohNSdKbof5WwtKkM=
+github.com/inwinstack/pango v0.4.2 h1:BzmOpPnEo/mwU03g3ZtE0oecJZEMC2xwpzs0xzQQggc=
+github.com/inwinstack/pango v0.4.2/go.mod h1:L0/TRNJ5ETQEBckTbsp3dopmfttohNSdKbof5WwtKkM=
 github.com/jonboulle/clockwork v0.0.0-20141017032234-72f9bd7c4e0c/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
 github.com/json-iterator/go v0.0.0-20180701071628-ab8a2e0c74be h1:AHimNtVIpiBjPUhEF5KNCkrUyqTSA5zWUl8sQ2bfGBE=
 github.com/json-iterator/go v0.0.0-20180701071628-ab8a2e0c74be/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=

@@ -26,7 +26,7 @@ import (
 const defaultSyncSecond = time.Second * 30
 
 type Callbacks struct {
-	OnActive  func()
+	OnActive  func(*util.HighAvailability)
 	OnPassive func()
 	OnFail    func(err error)
 }
@@ -65,12 +65,11 @@ func (i *Inspector) getStatus() error {
 	}
 
 	if status.Enable == "yes" {
-		switch {
-		case status.Group.Local.State == "active" && status.Group.Local.StateSync == "Complete":
-			i.callbacks.OnActive()
-		default:
-			i.callbacks.OnPassive()
+		if status.Group.Local.State == "active" {
+			i.callbacks.OnActive(status)
+			return nil
 		}
+		i.callbacks.OnPassive()
 	}
 	return nil
 }

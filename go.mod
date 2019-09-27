@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/inwinstack/blended v0.7.0
-	github.com/inwinstack/pango v0.4.1
+	github.com/inwinstack/pango v0.4.2
 	github.com/spf13/pflag v1.0.1
 	github.com/stretchr/testify v1.2.2
 	github.com/thoas/go-funk v0.4.0
