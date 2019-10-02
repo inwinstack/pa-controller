@@ -134,19 +134,24 @@ func main() {
 		active := false
 		callbacks := &ha.Callbacks{
 			OnActive: func(status *util.HighAvailability) {
+				stateSync := status.Group.Local.StateSync
+				syncEnabled := status.Group.RunningSyncEnabled
+				runningSync := status.Group.RunningSync
 				switch {
-				case status.Group.Local.StateSync == "Complete":
-					if status.Group.RunningSyncEnabled == "yes" && status.Group.RunningSync == "synchronized" {
-						glog.V(3).Infof("PAN firewall on active, and synchronized.")
-						if !active {
-							if err := op.Run(ctx); err != nil {
-								glog.Fatalf("Error to run the operator: %s.", err)
-							}
-							active = true
+				case stateSync == "Complete" && syncEnabled == "yes" && runningSync == "synchronized":
+					glog.V(3).Infof("PAN firewall on active, and synchronized.")
+					if !active {
+						if err := op.Run(ctx); err != nil {
+							glog.Fatalf("Error to run the operator: %s.", err)
 						}
+						active = true
 					}
 				default:
 					glog.V(3).Infof("PAN firewall on active, but not synchronized.")
+					if active {
+						op.Stop()
+						glog.Fatalf("The active state lost and not synchronized, exiting...")
+					}
 				}
 			},
 			OnPassive: func() {
@@ -154,7 +159,7 @@ func main() {
 				if active {
 					op.Stop()
 					active = false
-					glog.Fatalf("Active state lost, exiting...")
+					glog.Fatalf("The active state lost, exiting...")
 				}
 			},
 			OnFail: func(err error) {
